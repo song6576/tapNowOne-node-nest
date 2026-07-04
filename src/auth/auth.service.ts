@@ -1,16 +1,21 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthResult, toSafeUser } from './auth.types';
 import { GoogleAuthService } from './google-auth.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -31,13 +36,24 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: normalizedEmail,
-        password: passwordHash,
-        name: name?.trim() || normalizedEmail.split('@')[0],
-      },
-    });
+    let user;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          password: passwordHash,
+          name: name?.trim() || normalizedEmail.split('@')[0],
+        },
+      });
+    } catch (err) {
+      this.logger.error('Register failed', err instanceof Error ? err.stack : err);
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        if (err.code === 'P2002') {
+          throw new ConflictException('邮箱已被注册');
+        }
+      }
+      throw new InternalServerErrorException('注册失败，请检查数据库配置');
+    }
 
     return this.buildAuthResult(user);
   }

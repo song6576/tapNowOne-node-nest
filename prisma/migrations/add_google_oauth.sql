@@ -12,7 +12,7 @@ CREATE TABLE `user` (
   `google_id` VARCHAR(255) NULL,
   `name` VARCHAR(255) NULL,
   `avatar_url` VARCHAR(512) NULL,
-  `createTime` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `createTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_email_key` (`email`),
   UNIQUE KEY `user_google_id_key` (`google_id`)
