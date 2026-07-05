@@ -116,13 +116,58 @@ export class AuthService {
     return toSafeUser(user);
   }
 
-  private buildAuthResult(user: {
-    id: number;
-    email: string;
-    name: string | null;
-    avatarUrl: string | null;
-    createTime: Date;
-  }): AuthResult {
+  async updateAvatar(userId: number, avatarUrl: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+    return toSafeUser(user);
+  }
+
+  async updateBanner(userId: number, bannerUrl: string) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { bannerUrl },
+    });
+    return toSafeUser(user);
+  }
+
+  async updateProfile(
+    userId: number,
+    data: {
+      name?: string;
+      bio?: string;
+      socialLink?: string;
+      country?: string;
+      city?: string;
+      profession?: string;
+      showJoinDate?: boolean;
+    },
+  ) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined ? { name: data.name.trim() } : {}),
+        ...(data.bio !== undefined ? { bio: data.bio.trim() || null } : {}),
+        ...(data.socialLink !== undefined
+          ? { socialLink: data.socialLink.trim() || null }
+          : {}),
+        ...(data.country !== undefined
+          ? { country: data.country.trim() || null }
+          : {}),
+        ...(data.city !== undefined ? { city: data.city.trim() || null } : {}),
+        ...(data.profession !== undefined
+          ? { profession: data.profession.trim() || null }
+          : {}),
+        ...(data.showJoinDate !== undefined
+          ? { showJoinDate: data.showJoinDate }
+          : {}),
+      },
+    });
+    return toSafeUser(user);
+  }
+
+  private buildAuthResult(user: Parameters<typeof toSafeUser>[0]): AuthResult {
     const access_token = this.jwt.sign({
       sub: user.id,
       email: user.email,

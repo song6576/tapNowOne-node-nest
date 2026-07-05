@@ -16,24 +16,73 @@ model User {
   googleId   String?  @unique @map("google_id") @db.VarChar(255)
   name       String?  @db.VarChar(255)
   avatarUrl  String?  @map("avatar_url") @db.VarChar(512)
+  bannerUrl  String?  @map("banner_url") @db.VarChar(512)
+  bio        String?  @db.VarChar(500)
+  socialLink String?  @map("social_link") @db.VarChar(512)
+  country    String?  @db.VarChar(64)
+  city       String?  @db.VarChar(64)
+  profession String?  @db.VarChar(128)
+  showJoinDate Boolean @default(true) @map("show_join_date")
   createTime DateTime @default(now()) @map("createTime")
 
   agentConversations AgentConversation[]
+  workspaceFolders   WorkspaceFolder[]
+  projects           Project[]
 
   @@map("user")
+}
+
+model WorkspaceFolder {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    Int      @map("user_id")
+  parentId  String?  @map("parent_id") @db.Char(36)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   WorkspaceFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children WorkspaceFolder[] @relation("FolderTree")
+  projects Project[]
+
+  @@index([userId, updatedAt])
+  @@map("workspace_folder")
+}
+
+model Project {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    Int      @map("user_id")
+  folderId  String?  @map("folder_id") @db.Char(36)
+  name      String   @db.VarChar(255)
+  data      String   @db.LongText
+  thumbnail String?  @db.VarChar(512)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder             WorkspaceFolder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  agentConversations AgentConversation[]
+
+  @@index([userId, updatedAt])
+  @@index([folderId])
+  @@map("project")
 }
 
 model AgentConversation {
   id        String   @id @default(uuid()) @db.Char(36)
   userId    Int      @map("user_id")
+  projectId String?  @map("project_id") @db.Char(36)
   title     String?  @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project  Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
   messages AgentMessage[]
 
   @@index([userId, updatedAt])
+  @@index([projectId, updatedAt])
+  @@index([userId, projectId])
   @@map("agent_conversation")
 }
 

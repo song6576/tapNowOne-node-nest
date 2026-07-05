@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { User } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AgentChatDto, AgentStoryboardDto } from './dto/agent.dto';
 import { AgentService } from './agent.service';
 import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
@@ -25,9 +28,16 @@ export class AgentController {
       dto.context,
       req.user ?? null,
       dto.conversationId,
+      dto.projectId,
       dto.model,
       dto.auto ?? true,
     );
+  }
+
+  @Get('conversations/:id')
+  @UseGuards(JwtAuthGuard)
+  getConversation(@Param('id') id: string, @Req() req: { user: User }) {
+    return this.agentService.getConversation(req.user.id, id);
   }
 
   @Post('storyboard')

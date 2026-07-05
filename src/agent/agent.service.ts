@@ -29,6 +29,7 @@ export class AgentService {
     context: string | undefined,
     user: User | null,
     conversationId?: string,
+    projectId?: string,
     model?: string,
     auto = true,
   ): Promise<{ reply: string; conversationId?: string }> {
@@ -39,6 +40,15 @@ export class AgentService {
     let history: ChatMessage[] = [];
     let convId = conversationId;
 
+    if (user && projectId) {
+      const project = await this.prisma.project.findFirst({
+        where: { id: projectId, userId: user.id },
+      });
+      if (!project) {
+        throw new NotFoundException('项目不存在');
+      }
+    }
+
     if (user && convId) {
       const conversation = await this.prisma.agentConversation.findFirst({
         where: { id: convId, userId: user.id },
@@ -48,6 +58,9 @@ export class AgentService {
       });
       if (!conversation) {
         throw new NotFoundException('对话不存在');
+      }
+      if (projectId && conversation.projectId && conversation.projectId !== projectId) {
+        throw new BadRequestException('对话与项目不匹配');
       }
       history = conversation.messages.map((m) => ({
         role: m.role as ChatMessage['role'],
@@ -72,10 +85,16 @@ export class AgentService {
         const created = await this.prisma.agentConversation.create({
           data: {
             userId: user.id,
+            projectId: projectId ?? null,
             title,
           },
         });
         convId = created.id;
+      } else if (projectId) {
+        await this.prisma.agentConversation.updateMany({
+          where: { id: convId, userId: user.id, projectId: null },
+          data: { projectId },
+        });
       }
 
       await this.prisma.agentMessage.createMany({
@@ -92,6 +111,31 @@ export class AgentService {
     }
 
     return { reply, conversationId: convId };
+  }
+
+  async getConversation(userId: number, conversationId: string) {
+    const conversation = await this.prisma.agentConversation.findFirst({
+      where: { id: conversationId, userId },
+      include: {
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!conversation) {
+      throw new NotFoundException('对话不存在');
+    }
+    return {
+      id: conversation.id,
+      project_id: conversation.projectId,
+      title: conversation.title,
+      created_at: conversation.createdAt.toISOString(),
+      updated_at: conversation.updatedAt.toISOString(),
+      messages: conversation.messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        created_at: m.createdAt.toISOString(),
+      })),
+    };
   }
 
   async storyboard(

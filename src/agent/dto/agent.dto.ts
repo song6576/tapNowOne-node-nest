@@ -16,6 +16,10 @@ export class AgentChatDto {
   conversationId?: string;
 
   @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(64)
   model?: string;
