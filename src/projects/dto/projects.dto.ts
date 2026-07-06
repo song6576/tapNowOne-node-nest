@@ -18,6 +18,10 @@ export class CreateFolderDto {
   @IsOptional()
   @IsUUID()
   parentId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  teamId?: string;
 }
 
 export class UpdateFolderDto {
@@ -50,6 +54,10 @@ export class CreateProjectDto {
   @IsOptional()
   @IsUUID()
   id?: string;
+
+  @IsOptional()
+  @IsUUID()
+  teamId?: string;
 }
 
 export class UpdateProjectDto {
@@ -71,4 +79,8 @@ export class UpdateProjectDto {
   @ValidateIf((_, value) => value !== null && value !== undefined)
   @IsUUID()
   folderId?: string | null;
+
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsUUID()
+  teamId?: string | null;
 }

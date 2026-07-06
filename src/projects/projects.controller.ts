@@ -6,11 +6,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TeamScopeQueryDto } from '../teams/dto/teams.dto';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -23,8 +25,8 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  list(@Req() req: { user: User }) {
-    return this.projectsService.listProjects(req.user.id);
+  list(@Query() query: TeamScopeQueryDto, @Req() req: { user: User }) {
+    return this.projectsService.listProjects(req.user.id, query.teamId ?? null);
   }
 
   @Post()

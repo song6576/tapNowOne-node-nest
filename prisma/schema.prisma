@@ -23,11 +23,22 @@ model User {
   city       String?  @db.VarChar(64)
   profession String?  @db.VarChar(128)
   showJoinDate Boolean @default(true) @map("show_join_date")
+  tapiesBalance Int    @default(0) @map("tapies_balance")
+  activeTeamId  String? @map("active_team_id") @db.Char(36)
   createTime DateTime @default(now()) @map("createTime")
 
   agentConversations AgentConversation[]
   workspaceFolders   WorkspaceFolder[]
   projects           Project[]
+  taptvWorks         TapTVWork[]
+  taptvLikes         TapTVLike[]
+  taptvFavorites     TapTVFavorite[]
+  followers          UserFollow[] @relation("UserFollowers")
+  following          UserFollow[] @relation("UserFollowing")
+  ownedTeams         Team[]           @relation("TeamOwner")
+  teamMemberships    TeamMember[]
+  createdInviteLinks TeamInviteLink[] @relation("InviteLinkCreator")
+  activeTeam         Team?            @relation("ActiveTeam", fields: [activeTeamId], references: [id], onDelete: SetNull)
 
   @@map("user")
 }
@@ -35,23 +46,27 @@ model User {
 model WorkspaceFolder {
   id        String   @id @default(uuid()) @db.Char(36)
   userId    Int      @map("user_id")
+  teamId    String?  @map("team_id") @db.Char(36)
   parentId  String?  @map("parent_id") @db.Char(36)
   name      String   @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
   user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team     Team?             @relation(fields: [teamId], references: [id], onDelete: Cascade)
   parent   WorkspaceFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: SetNull)
   children WorkspaceFolder[] @relation("FolderTree")
   projects Project[]
 
-  @@index([userId, updatedAt])
+  @@index([userId, teamId, updatedAt])
+  @@index([teamId, updatedAt])
   @@map("workspace_folder")
 }
 
 model Project {
   id        String   @id @default(uuid()) @db.Char(36)
   userId    Int      @map("user_id")
+  teamId    String?  @map("team_id") @db.Char(36)
   folderId  String?  @map("folder_id") @db.Char(36)
   name      String   @db.VarChar(255)
   data      String   @db.LongText
@@ -60,10 +75,12 @@ model Project {
   updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
 
   user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team               Team?                @relation(fields: [teamId], references: [id], onDelete: Cascade)
   folder             WorkspaceFolder?     @relation(fields: [folderId], references: [id], onDelete: SetNull)
   agentConversations AgentConversation[]
 
-  @@index([userId, updatedAt])
+  @@index([userId, teamId, updatedAt])
+  @@index([teamId, updatedAt])
   @@index([folderId])
   @@map("project")
 }
@@ -97,4 +114,157 @@ model AgentMessage {
 
   @@index([conversationId, createdAt])
   @@map("agent_message")
+}
+
+model FeaturedBanner {
+  id        String   @id @default(uuid()) @db.Char(36)
+  title     String   @db.VarChar(255)
+  subtitle  String?  @db.VarChar(255)
+  cover     String   @db.VarChar(512)
+  link      String?  @db.VarChar(512)
+  sortOrder Int      @default(0) @map("sort_order")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([active, sortOrder])
+  @@map("featured_banner")
+}
+
+model TapTVWork {
+  id           String   @id @default(uuid()) @db.Char(36)
+  userId       Int?     @map("user_id")
+  title        String   @db.VarChar(255)
+  authorName   String   @map("author_name") @db.VarChar(128)
+  authorAvatar String   @map("author_avatar") @db.VarChar(16)
+  cover        String   @db.VarChar(512)
+  videoUrl     String   @map("video_url") @db.VarChar(512)
+  description  String?  @db.Text
+  producer     String?  @db.VarChar(255)
+  forks        Int      @default(0)
+  likes        Int      @default(0)
+  favorites    Int      @default(0)
+  shares       Int      @default(0)
+  tags         String   @db.VarChar(512)
+  nodeCount    Int      @default(0) @map("node_count")
+  category     String   @db.VarChar(32)
+  featured     Boolean  @default(false)
+  workflowData String?  @map("workflow_data") @db.LongText
+  publishedAt  DateTime @map("published_at") @db.DateTime(0)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user      User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  likesList TapTVLike[]
+  favList   TapTVFavorite[]
+
+  @@index([featured, publishedAt])
+  @@index([category, publishedAt])
+  @@index([publishedAt])
+  @@index([likes])
+  @@map("taptv_work")
+}
+
+model TapTVLike {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    Int      @map("user_id")
+  workId    String   @map("work_id") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work TapTVWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workId])
+  @@index([workId])
+  @@map("taptv_like")
+}
+
+model TapTVFavorite {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    Int      @map("user_id")
+  workId    String   @map("work_id") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  work TapTVWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workId])
+  @@index([workId])
+  @@map("taptv_favorite")
+}
+
+model UserFollow {
+  id          String   @id @default(uuid()) @db.Char(36)
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+  @@map("user_follow")
+}
+
+model Team {
+  id            String   @id @default(uuid()) @db.Char(36)
+  publicId      String   @unique @map("public_id") @db.VarChar(32)
+  name          String   @db.VarChar(255)
+  ownerId       Int      @map("owner_id")
+  tapiesBalance Int      @default(0) @map("tapies_balance")
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  owner        User              @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+  inviteLinks  TeamInviteLink[]
+  folders      WorkspaceFolder[]
+  projects     Project[]
+  activeUsers  User[]            @relation("ActiveTeam")
+
+  @@index([ownerId])
+  @@map("team")
+}
+
+model TeamMember {
+  id           String   @id @default(uuid()) @db.Char(36)
+  teamId       String   @map("team_id") @db.Char(36)
+  userId       Int      @map("user_id")
+  role         String   @default("member") @db.VarChar(20)
+  inviteLinkId String?  @map("invite_link_id") @db.Char(36)
+  quotaLimit   Int?     @map("quota_limit")
+  quotaUsed    Int      @default(0) @map("quota_used")
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  team       Team            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inviteLink TeamInviteLink? @relation(fields: [inviteLinkId], references: [id], onDelete: SetNull)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@index([inviteLinkId])
+  @@map("team_member")
+}
+
+model TeamInviteLink {
+  id             String    @id @default(uuid()) @db.Char(36)
+  teamId         String    @map("team_id") @db.Char(36)
+  token          String    @unique @db.VarChar(32)
+  createdBy      Int       @map("created_by")
+  expiresAt      DateTime  @map("expires_at") @db.DateTime(0)
+  maxUses        Int?      @map("max_uses")
+  useCount       Int       @default(0) @map("use_count")
+  unlimitedQuota Boolean   @default(true) @map("unlimited_quota")
+  revokedAt      DateTime? @map("revoked_at") @db.DateTime(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+
+  team    Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator User         @relation("InviteLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  members TeamMember[]
+
+  @@index([teamId])
+  @@index([expiresAt])
+  @@map("team_invite_link")
 }
