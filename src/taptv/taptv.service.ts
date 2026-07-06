@@ -8,7 +8,7 @@ import {
 import type { TapTVWork, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectsService } from '../projects/projects.service';
-import type { ListTapTVDto } from './dto/taptv.dto';
+import type { ListTapTVDto, PublishTapTVDto } from './dto/taptv.dto';
 import {
   buildTapTVWorkflow,
   parseWorkflowData,
@@ -293,6 +293,42 @@ export class TaptvService implements OnModuleInit {
       data: { forks: { increment: 1 } },
     });
     return project;
+  }
+
+  async publishWork(user: User, dto: PublishTapTVDto) {
+    const project = await this.projectsService.getProject(user.id, dto.projectId);
+    const workflow = project.data as WorkflowProject;
+    const nodeCount = Array.isArray(workflow?.nodes) ? workflow.nodes.length : 0;
+    const authorName = user.name?.trim() || user.email?.split('@')[0] || 'Creator';
+    const authorAvatar = authorName.trim()[0]?.toUpperCase() ?? 'C';
+    const cover =
+      dto.coverUrl?.trim() ||
+      project.thumbnail ||
+      'linear-gradient(160deg,#1a1a1e 0%,#2d2d35 50%,#1a1a1e 100%)';
+
+    const work = await this.prisma.tapTVWork.create({
+      data: {
+        userId: user.id,
+        title: dto.title.trim(),
+        authorName,
+        authorAvatar,
+        cover,
+        videoUrl: dto.videoUrl.trim(),
+        description: dto.description?.trim() || null,
+        tags: JSON.stringify([]),
+        nodeCount: nodeCount || 1,
+        category: dto.category ?? 'creative',
+        featured: false,
+        workflowData: JSON.stringify(workflow),
+        publishedAt: new Date(),
+      },
+    });
+
+    return {
+      id: work.id,
+      title: work.title,
+      message: '作品已提交审核',
+    };
   }
 
   private async assertWork(id: string) {

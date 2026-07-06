@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -10,7 +11,7 @@ import {
 import type { User } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
-import { ListTapTVDto } from './dto/taptv.dto';
+import { ListTapTVDto, PublishTapTVDto } from './dto/taptv.dto';
 import { TaptvService } from './taptv.service';
 
 @Controller('api/home')
@@ -31,6 +32,12 @@ export class TaptvController {
   @UseGuards(OptionalJwtAuthGuard)
   list(@Query() query: ListTapTVDto, @Req() req: { user: User | null }) {
     return this.taptvService.listWorks(query, req.user ?? null);
+  }
+
+  @Post('publish')
+  @UseGuards(JwtAuthGuard)
+  publish(@Body() dto: PublishTapTVDto, @Req() req: { user: User }) {
+    return this.taptvService.publishWork(req.user, dto);
   }
 
   @Get(':id/workflow')

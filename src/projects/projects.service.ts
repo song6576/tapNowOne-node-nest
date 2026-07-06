@@ -128,6 +128,7 @@ export class ProjectsService {
     await this.teamsService.resolveScope(userId, teamId);
 
     const parentId = query.parentId ?? null;
+    const flat = query.flat === true;
     const keyword = query.q?.trim();
     const type = query.type ?? 'all';
     const sortBy = query.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
@@ -155,7 +156,7 @@ export class ProjectsService {
         : await this.prisma.project.findMany({
             where: {
               ...projectScope,
-              folderId: parentId,
+              ...(flat ? {} : { folderId: parentId }),
               ...(keyword ? { name: { contains: keyword } } : {}),
             },
             orderBy,
