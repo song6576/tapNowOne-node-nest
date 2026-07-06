@@ -11,6 +11,7 @@ import type {
   CreateProjectDto,
   UpdateFolderDto,
   UpdateProjectDto,
+  WorkspaceSearchQueryDto,
 } from './dto/projects.dto';
 
 function emptyCanvasData(id: string, name: string) {
@@ -120,6 +121,116 @@ export class ProjectsService {
     });
 
     return { ok: true };
+  }
+
+  async searchWorkspace(userId: number, query: WorkspaceSearchQueryDto) {
+    const teamId = query.teamId ?? null;
+    await this.teamsService.resolveScope(userId, teamId);
+
+    const parentId = query.parentId ?? null;
+    const keyword = query.q?.trim();
+    const type = query.type ?? 'all';
+    const sortBy = query.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
+    const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy = { [sortBy]: sortOrder } as const;
+
+    const folderScope = this.teamsService.folderWhere(userId, teamId);
+    const projectScope = this.teamsService.projectWhere(userId, teamId);
+
+    const folders =
+      type === 'projects'
+        ? []
+        : await this.prisma.workspaceFolder.findMany({
+            where: {
+              ...folderScope,
+              parentId,
+              ...(keyword ? { name: { contains: keyword } } : {}),
+            },
+            orderBy,
+          });
+
+    const projects =
+      type === 'folders'
+        ? []
+        : await this.prisma.project.findMany({
+            where: {
+              ...projectScope,
+              folderId: parentId,
+              ...(keyword ? { name: { contains: keyword } } : {}),
+            },
+            orderBy,
+            select: {
+              id: true,
+              name: true,
+              folderId: true,
+              teamId: true,
+              thumbnail: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          });
+
+    const folderIds = folders.map((f) => f.id);
+    const projectCounts =
+      folderIds.length === 0
+        ? []
+        : await this.prisma.project.groupBy({
+            by: ['folderId'],
+            where: {
+              ...projectScope,
+              folderId: { in: folderIds },
+            },
+            _count: { _all: true },
+          });
+    const countMap = new Map(
+      projectCounts.map((row) => [row.folderId, row._count._all]),
+    );
+
+    let current_folder: {
+      id: string;
+      name: string;
+      parent_id: string | null;
+      team_id: string | null;
+      created_at: string;
+      updated_at: string;
+    } | null = null;
+    if (parentId) {
+      const current = await this.prisma.workspaceFolder.findFirst({
+        where: { id: parentId, ...folderScope },
+      });
+      if (current) {
+        current_folder = {
+          id: current.id,
+          name: current.name,
+          parent_id: current.parentId,
+          team_id: current.teamId,
+          created_at: toIso(current.createdAt),
+          updated_at: toIso(current.updatedAt),
+        };
+      }
+    }
+
+    return {
+      current_folder,
+      folders: folders.map((f) => ({
+        id: f.id,
+        name: f.name,
+        parent_id: f.parentId,
+        team_id: f.teamId,
+        project_count: countMap.get(f.id) ?? 0,
+        created_at: toIso(f.createdAt),
+        updated_at: toIso(f.updatedAt),
+      })),
+      projects: projects.map((p) => ({
+        id: p.id,
+        name: p.name,
+        folder_id: p.folderId,
+        team_id: p.teamId,
+        thumbnail: p.thumbnail ?? undefined,
+        created_at: toIso(p.createdAt),
+        updated_at: toIso(p.updatedAt),
+      })),
+    };
   }
 
   async listProjects(userId: number, teamId: string | null) {

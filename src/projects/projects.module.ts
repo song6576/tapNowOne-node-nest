@@ -3,11 +3,12 @@ import { AuthModule } from '../auth/auth.module';
 import { TeamsModule } from '../teams/teams.module';
 import { FoldersController } from './folders.controller';
 import { ProjectsController } from './projects.controller';
+import { WorkspaceController } from './workspace.controller';
 import { ProjectsService } from './projects.service';
 
 @Module({
   imports: [AuthModule, TeamsModule],
-  controllers: [ProjectsController, FoldersController],
+  controllers: [ProjectsController, FoldersController, WorkspaceController],
   providers: [ProjectsService],
   exports: [ProjectsService],
 })

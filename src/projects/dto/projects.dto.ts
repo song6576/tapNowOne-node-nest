@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
@@ -7,6 +8,7 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { TeamScopeQueryDto } from '../../teams/dto/teams.dto';
 
 export class CreateFolderDto {
   @IsOptional()
@@ -83,4 +85,28 @@ export class UpdateProjectDto {
   @ValidateIf((_, value) => value !== null && value !== undefined)
   @IsUUID()
   teamId?: string | null;
+}
+
+export class WorkspaceSearchQueryDto extends TeamScopeQueryDto {
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsUUID()
+  parentId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  q?: string;
+
+  @IsOptional()
+  @IsIn(['all', 'folders', 'projects'])
+  type?: 'all' | 'folders' | 'projects';
+
+  @IsOptional()
+  @IsIn(['updatedAt', 'createdAt'])
+  sortBy?: 'updatedAt' | 'createdAt';
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }
