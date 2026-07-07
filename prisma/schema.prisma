@@ -131,19 +131,20 @@ model FeaturedBanner {
   @@map("featured_banner")
 }
 
+/// TapTV 社区作品。cover=列表封面，videoUrl=悬浮播放地址。详见 docs/SQL.md §7
 model TapTVWork {
   id           String   @id @default(uuid()) @db.Char(36)
-  userId       Int?     @map("user_id")
+  userId       Int?     @map("user_id") /// 发布者；种子数据可为空
   title        String   @db.VarChar(255)
   authorName   String   @map("author_name") @db.VarChar(128)
   authorAvatar String   @map("author_avatar") @db.VarChar(16)
-  cover        String   @db.VarChar(512)
-  videoUrl     String   @map("video_url") @db.VarChar(512)
+  cover        String   @db.VarChar(512) /// 列表默认封面：图片 URL 或 CSS 渐变
+  videoUrl     String   @map("video_url") @db.VarChar(512) /// 卡片鼠标悬浮时播放
   description  String?  @db.Text
   producer     String?  @db.VarChar(255)
   forks        Int      @default(0)
-  likes        Int      @default(0)
-  favorites    Int      @default(0)
+  likes        Int      @default(0) /// 冗余计数，与 TapTVLike 同步
+  favorites    Int      @default(0) /// 冗余计数，与 TapTVFavorite 同步
   shares       Int      @default(0)
   tags         String   @db.VarChar(512)
   nodeCount    Int      @default(0) @map("node_count")
@@ -165,6 +166,7 @@ model TapTVWork {
   @@map("taptv_work")
 }
 
+/// 用户点赞记录；(userId, workId) 唯一 → POST /api/taptv/:id/like
 model TapTVLike {
   id        String   @id @default(uuid()) @db.Char(36)
   userId    Int      @map("user_id")
@@ -179,6 +181,7 @@ model TapTVLike {
   @@map("taptv_like")
 }
 
+/// 用户收藏记录；(userId, workId) 唯一 → POST favorite / GET favorites
 model TapTVFavorite {
   id        String   @id @default(uuid()) @db.Char(36)
   userId    Int      @map("user_id")

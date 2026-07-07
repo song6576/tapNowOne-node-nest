@@ -11,6 +11,7 @@ import {
   MinLength,
 } from 'class-validator';
 
+/** TapTV 列表排序：featured 精选 / following 关注 / hot 热度 / latest 最新 */
 const TAPTV_SORTS = ['featured', 'following', 'hot', 'latest'] as const;
 const TAPTV_CATEGORIES = [
   'all',
@@ -27,6 +28,7 @@ const TAPTV_CATEGORIES = [
 
 const TAPTV_PUBLISH_CATEGORIES = TAPTV_CATEGORIES.filter((c) => c !== 'all');
 
+/** POST /api/taptv/publish 请求体。coverUrl → taptv_work.cover；videoUrl → 悬浮播放 */
 export class PublishTapTVDto {
   @IsString()
   @MinLength(1)
@@ -49,6 +51,7 @@ export class PublishTapTVDto {
   @IsOptional()
   @IsString()
   @MaxLength(512)
+  /** 封面图 URL；不传则用项目 thumbnail 或默认渐变 */
   coverUrl?: string;
 
   @IsOptional()

@@ -193,6 +193,10 @@ export class TaptvService implements OnModuleInit {
     return workflow;
   }
 
+  /**
+   * 切换点赞：taptv_like 与 taptv_work.likes 在同一事务中增删。
+   * @returns liked 当前是否已赞；likes 更新后的总数
+   */
   async toggleLike(workId: string, user: User) {
     const work = await this.assertWork(workId);
     const existing = await this.prisma.tapTVLike.findUnique({
@@ -220,6 +224,10 @@ export class TaptvService implements OnModuleInit {
     return { liked: true, likes: updated?.likes ?? work.likes + 1 };
   }
 
+  /**
+   * 切换收藏：taptv_favorite 与 taptv_work.favorites 在同一事务中增删。
+   * @returns favorited 当前是否已藏；favorites 更新后的总数
+   */
   async toggleFavorite(workId: string, user: User) {
     const work = await this.assertWork(workId);
     const existing = await this.prisma.tapTVFavorite.findUnique({
@@ -245,6 +253,21 @@ export class TaptvService implements OnModuleInit {
     ]);
     const updated = await this.prisma.tapTVWork.findUnique({ where: { id: workId } });
     return { favorited: true, favorites: updated?.favorites ?? work.favorites + 1 };
+  }
+
+  /**
+   * 我的收藏：按 taptv_favorite.created_at 倒序返回作品列表。
+   * 用于个人主页「我的收藏」Tab。
+   */
+  async listFavorites(user: User) {
+    const rows = await this.prisma.tapTVFavorite.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: { work: true },
+    });
+    const works = rows.map((row) => row.work);
+    const mapped = await this.mapWorks(works, user.id);
+    return mapped.map((item) => ({ ...item, favorited_by_me: true }));
   }
 
   async recordShare(workId: string) {
@@ -337,6 +360,10 @@ export class TaptvService implements OnModuleInit {
     return work;
   }
 
+  /**
+   * 将 taptv_work 行映射为 API 响应，并批量附加当前用户的点赞/收藏/关注状态。
+   * cover → 列表封面；video_url → 悬浮播放。
+   */
   private async mapWorks(rows: TapTVWork[], viewerId: number | null) {
     if (!rows.length) return [];
     const ids = rows.map((r) => r.id);
