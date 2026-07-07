@@ -79,3 +79,15 @@ npm run dev
 - `backend-nest/` — 新 NestJS 栈，负责用户系统；后续逐步迁移队列与 FFmpeg
 
 Vite 代理：`/api` → NestJS `:3000`，`/static` → Python `:8000`（生成资源）
+
+## 文档与数据库脚本
+
+| 目录 | 说明 |
+|------|------|
+| [`docs/API.md`](docs/API.md) | 全部 HTTP 接口说明（路径、鉴权、请求/响应） |
+| [`docs/SQL.md`](docs/SQL.md) | `deploy/sql/` 脚本说明、表字段、执行顺序 |
+| [`docs/FRONTEND.md`](docs/FRONTEND.md) | 前端架构与 Mock 切换（前端在独立仓库） |
+| [`docs/UPLOAD.md`](docs/UPLOAD.md) | 文件上传接口 |
+| [`deploy/sql/`](deploy/sql/) | MySQL 迁移脚本（phpMyAdmin 手动执行） |
+| [`deploy/nginx/`](deploy/nginx/) | Nginx 配置示例 |
+| [`deploy/pm2.ecosystem.config.cjs`](deploy/pm2.ecosystem.config.cjs) | PM2 进程配置 |

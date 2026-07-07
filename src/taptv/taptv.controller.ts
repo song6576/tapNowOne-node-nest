@@ -1,6 +1,6 @@
 /**
  * TapTV 社区 HTTP 路由
- * 完整接口说明见项目根目录 docs/API.md
+ * 完整接口说明见本仓库 docs/API.md
  *
  * 注意：静态路径（如 favorites、publish）必须写在动态路径 :id 之前，
  * 否则 Nest 会把 "favorites" 当成作品 id。
