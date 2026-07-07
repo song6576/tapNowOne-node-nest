@@ -65,6 +65,42 @@ taptv_favorite(user_id, work_id) 唯一 → 某用户是否收藏；个人主页
 
 ---
 
+### GET `/api/home/dashboard`
+
+首页聚合接口：一次返回精选轮播 + TapTV 预览（默认 8 条），减少前端往返。
+
+可选登录（`Authorization: Bearer <jwt>`）：TapTV 预览含 `liked_by_me` / `favorited_by_me` / `following_author`。
+
+**响应示例：**
+
+```json
+{
+  "featured": [
+    {
+      "id": "uuid",
+      "title": "TapNow Launches ChatGPT Images 2.0",
+      "subtitle": "实现创意·更清晰·更流畅",
+      "cover": "linear-gradient(...)",
+      "link": "/taptv"
+    }
+  ],
+  "taptv": [
+    {
+      "id": "uuid",
+      "title": "作品标题",
+      "cover": "https://...",
+      "author": { "id": "1", "name": "作者", "avatar": "..." },
+      "likes": 42,
+      "liked_by_me": false
+    }
+  ]
+}
+```
+
+**说明：** TapTV 预览等价于 `GET /api/taptv?sort=featured&limit=8`。独立接口 `/api/home/featured` 与 `/api/taptv` 仍保留兼容。
+
+---
+
 ### GET `/api/taptv`
 
 作品列表。可选登录（登录后每条带 `liked_by_me` / `favorited_by_me` / `following_author`）。

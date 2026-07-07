@@ -127,6 +127,15 @@ export class TaptvService implements OnModuleInit {
     }));
   }
 
+  /** 首页聚合：精选轮播 + TapTV 预览（减少前端往返） */
+  async getHomeDashboard(viewer: User | null, taptvLimit = 8) {
+    const [featured, taptv] = await Promise.all([
+      this.listFeatured(),
+      this.listWorks({ sort: 'featured', limit: taptvLimit }, viewer),
+    ]);
+    return { featured, taptv };
+  }
+
   async listWorks(dto: ListTapTVDto, viewer: User | null) {
     const sort = dto.sort ?? 'featured';
     if (sort === 'following' && !viewer) {

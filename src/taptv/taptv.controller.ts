@@ -30,6 +30,16 @@ export class HomeController {
   listFeatured() {
     return this.taptvService.listFeatured();
   }
+
+  /**
+   * GET /api/home/dashboard — 首页聚合（精选轮播 + TapTV 预览）
+   * 可选登录：TapTV 预览含 liked_by_me / favorited_by_me
+   */
+  @Get('dashboard')
+  @UseGuards(OptionalJwtAuthGuard)
+  dashboard(@Req() req: { user: User | null }) {
+    return this.taptvService.getHomeDashboard(req.user ?? null);
+  }
 }
 
 @Controller('api/taptv')
