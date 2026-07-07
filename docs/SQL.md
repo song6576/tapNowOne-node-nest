@@ -7,18 +7,29 @@
 
 ## 一、执行顺序（新环境推荐）
 
+### 方式 A：一条命令建全库（推荐）
+
+```bash
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS tapnow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
+```
+
+`init-all-tables.sql` 会创建全部 **13 张表**：`user`、`team`、`team_invite_link`、`team_member`、`workspace_folder`、`project`、`agent_conversation`、`agent_message`、`featured_banner`、`taptv_work`、`taptv_like`、`taptv_favorite`、`user_follow`。
+
+### 方式 B：分步执行（旧库升级或只需部分表时）
+
 | 顺序 | 文件 | 说明 |
 |------|------|------|
-| 1 | `init-user-table.sql` | 创建用户表（全新库） |
+| 1 | `init-user-table.sql` | 创建完整 user 表 |
 | 2 | `add-agent-chat-tables.sql` | Agent 对话表 |
 | 3 | `add-project-folder-tables.sql` | 项目、文件夹表 + Agent 关联项目 |
-| 4 | `add-user-profile-fields.sql` | 用户背景图 `banner_url` |
-| 5 | `add-user-profile-text-fields.sql` | 个人简介、社交、地区等 |
-| 6 | `add-taptv-tables.sql` | TapTV 作品、点赞、收藏、关注 |
-| 7 | `add-team-tables.sql` | 团队、成员、工作空间 `team_id` 隔离 |
-| 8 | `add-team-invite-tables.sql` | 邀请链接、成员配额字段 |
+| 4 | `add-taptv-tables.sql` | TapTV 作品、点赞、收藏、关注 |
+| 5 | `add-team-tables.sql` | 团队、成员、工作空间 `team_id` 隔离 |
+| 6 | `add-team-invite-tables.sql` | 邀请链接、成员配额字段 |
 
-若 **user 表已存在** 且有数据，不要用 `init-user-table.sql` 的 DROP，改用 `fix-user-table-for-prisma.sql` 或 `alter-user-table.sql` 修补。
+> 方式 B 中 `init-user-table.sql` 已包含个人资料、`tapies_balance`、`active_team_id` 等字段，**无需**再执行 `alter-user-table.sql`、`add-user-profile-fields.sql`、`add-user-profile-text-fields.sql`，以及 `add-team-tables.sql` 里对 user 表的 ALTER 部分。
+
+若 **user 表已存在** 且有数据，不要用 `init-user-table.sql` / `init-all-tables.sql` 的 DROP，改用 `fix-user-table-for-prisma.sql` 或 `alter-user-table.sql` 修补。
 
 ---
 
@@ -32,18 +43,27 @@
 - 删除旧 `user` 表（`DROP TABLE IF EXISTS`）
 - 创建 NestJS / Prisma 所需的用户表
 
-**表：`user`**
+**表：`user`（已包含个人资料、Tapies、团队字段，无需再跑 `alter-user-table` / `add-user-profile-*`）**
 
 | 字段 | 类型 | 含义 |
 |------|------|------|
 | `id` | INT AUTO_INCREMENT | 用户主键，自增整数 |
 | `email` | VARCHAR(255) UNIQUE | 登录邮箱，唯一 |
 | `iphone` | INT NULL | 手机号（历史字段名，Prisma 映射为 `phone`） |
-| `passWord` | VARCHAR(255) NULL |  bcrypt 加密后的密码；Google 登录用户可为空 |
+| `passWord` | VARCHAR(255) NULL | bcrypt 加密后的密码；Google 登录用户可为空 |
 | `token` | VARCHAR(255) NULL | 预留 token 字段（当前 JWT 不存库） |
 | `google_id` | VARCHAR(255) UNIQUE NULL | Google OAuth 用户 ID |
 | `name` | VARCHAR(255) NULL | 显示昵称 |
-| `avatar_url` | VARCHAR(512) NULL | 头像 URL（Google 头像或本地上传 `/uploads/...`） |
+| `avatar_url` | VARCHAR(512) NULL | 头像 URL |
+| `banner_url` | VARCHAR(512) NULL | 个人主页背景图 |
+| `bio` | VARCHAR(500) NULL | 个人简介 |
+| `social_link` | VARCHAR(512) NULL | 社交链接 |
+| `country` | VARCHAR(64) NULL | 国家 |
+| `city` | VARCHAR(64) NULL | 城市 |
+| `profession` | VARCHAR(128) NULL | 职业 |
+| `show_join_date` | TINYINT(1) DEFAULT 1 | 是否展示加入日期 |
+| `tapies_balance` | INT DEFAULT 0 | Tapies 余额 |
+| `active_team_id` | CHAR(36) NULL | 当前激活团队 ID |
 | `createTime` | TIMESTAMP | 注册时间，默认当前时间 |
 
 **注意：** 列名 `passWord`、`createTime` 与 Prisma schema 中的 `@map` 一致，不要随意改成 `password`。
