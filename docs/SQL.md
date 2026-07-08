@@ -14,7 +14,11 @@ mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS tapnow CHARACTER SET utf8mb4 
 mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 ```
 
-`init-all-tables.sql` 会创建全部 **13 张表**：`user`、`team`、`team_invite_link`、`team_member`、`workspace_folder`、`project`、`agent_conversation`、`agent_message`、`featured_banner`、`taptv_work`、`taptv_like`、`taptv_favorite`、`user_follow`。
+`init-all-tables.sql` 会创建业务表共 **13 张**，外加运维用的 `schema_migration`（记录已执行过的增量 SQL）：  
+`user`、`team`、`team_invite_link`、`team_member`、`workspace_folder`、`project`、`agent_conversation`、`agent_message`、`featured_banner`、`taptv_work`、`taptv_like`、`taptv_favorite`、`user_follow`、`schema_migration`。
+
+**线上升级（改表 / 新建表）** 见 [`DEPLOY-DB.md`](DEPLOY-DB.md)：只跑新的 `add-*.sql`，并用 `deploy/apply-sql.sh` 写入 `schema_migration`。  
+已有线上库首次启用记录表：`./deploy/apply-sql.sh add-schema-migration-table.sql`。
 
 ### 方式 B：分步执行（旧库升级或只需部分表时）
 
@@ -349,6 +353,16 @@ user (1) ──< user_follow (follower / following)
 画布节点**不单独建表**，全部存在 `project.data` 的 JSON 里。  
 上传的图片/视频/音频 URL 写在节点 `data.outputUrl` 中。
 
+### 表 `schema_migration`（运维用）
+
+| 字段 | 类型 | 含义 |
+|------|------|------|
+| `id` | INT AUTO_INCREMENT | 主键 |
+| `filename` | VARCHAR(255) UNIQUE | 已执行的 `deploy/sql/*.sql` 文件名 |
+| `applied_at` | TIMESTAMP | 执行时间 |
+
+Nest/Prisma **不读**此表；由 `deploy/apply-sql.sh` 维护，避免线上重复执行同一增量脚本。详见 [`DEPLOY-DB.md`](DEPLOY-DB.md)。
+
 ---
 
 ## 四、phpMyAdmin 操作提示
@@ -371,7 +385,8 @@ cd backend-nest
 npx prisma generate
 ```
 
-生产/共享 MySQL 仍以 `deploy/sql/*.sql` 为准手动迁移，避免 `prisma migrate` 与 phpMyAdmin 环境不一致。
+生产/共享 MySQL 仍以 `deploy/sql/*.sql` 为准手动迁移，避免 `prisma migrate` 与 phpMyAdmin 环境不一致。  
+详细升级步骤、备份、`apply-sql.sh` 用法见 [`DEPLOY-DB.md`](DEPLOY-DB.md)。
 
 ---
 
@@ -381,11 +396,14 @@ npx prisma generate
 
 | 步骤 | 文件 | 写什么 |
 |------|------|--------|
-| 1 | `deploy/sql/*.sql` | 每个字段行尾 `-- 中文注释`；表头写关联接口 |
-| 2 | `docs/SQL.md` | 对应章节：表用途、字段表、何时执行 |
-| 3 | `docs/API.md` | 路径、鉴权、请求/响应、业务逻辑 |
-| 4 | `backend-nest/src/**` | Controller 路由注释 + Service 方法 JSDoc |
-| 5 | `frontend/src/api/client.ts` | 函数 JSDoc（调哪个接口、返回什么） |
-| 6 | `frontend/src/services/api.ts` | Mock/真实切换说明（若新增对外导出） |
+| 1 | `deploy/sql/add-*.sql`（或 `alter-*.sql`） | 增量变更；表头写关联接口；字段加中文注释 |
+| 2 | `deploy/sql/init-all-tables.sql` | 同步新表/新字段（仅供新环境一键初始化） |
+| 3 | `docs/SQL.md` | 对应章节：表用途、字段表、何时执行 |
+| 4 | `docs/DEPLOY-DB.md` | 若流程有变则补充 |
+| 5 | `docs/API.md` | 路径、鉴权、请求/响应、业务逻辑 |
+| 6 | `backend-nest/src/**` | Controller 路由注释 + Service 方法 JSDoc |
+| 7 | `frontend/src/api/client.ts` | 函数 JSDoc（调哪个接口、返回什么） |
+| 8 | `frontend/src/services/api.ts` | Mock/真实切换说明（若新增对外导出） |
 
-Prisma `schema.prisma` 中对应 model 字段可加 `///` 注释，与 SQL 文档保持一致。
+Prisma `schema.prisma` 中对应 model 字段可加 `///` 注释，与 SQL 文档保持一致。  
+服务器上用 `./deploy/apply-sql.sh 文件名.sql` 执行增量脚本并登记到 `schema_migration`。

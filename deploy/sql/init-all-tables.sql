@@ -246,4 +246,16 @@ CREATE TABLE `user_follow` (
   CONSTRAINT `fk_user_follow_following` FOREIGN KEY (`following_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ── 5. 迁移记录（运维用，Nest/Prisma 不读此表）────────────────────────────────
+
+CREATE TABLE `schema_migration` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `filename` VARCHAR(255) NOT NULL COMMENT 'deploy/sql/ 下的脚本文件名',
+  `applied_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '执行时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_schema_migration_filename` (`filename`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `schema_migration` (`filename`) VALUES ('init-all-tables.sql');
+
 -- 首次启动 Nest 服务时会自动 seed 精选轮播与 TapTV 示例数据（表为空时）
