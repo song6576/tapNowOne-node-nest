@@ -3,6 +3,8 @@
 -- 接口说明见 docs/API.md「计费 /api/billing」；字段说明见 docs/SQL.md
 -- =============================================================================
 
+SET NAMES utf8mb4;
+
 -- -----------------------------------------------------------------------------
 -- user_subscription：用户/团队当前订阅（个人 team_id=NULL，团队订阅填 team_id）
 -- 接口：POST /api/billing/subscribe
@@ -24,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `user_subscription` (
   KEY `idx_sub_team` (`team_id`),
   CONSTRAINT `fk_sub_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_sub_team` FOREIGN KEY (`team_id`) REFERENCES `team` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
 -- gift_pack：礼包超市商品目录
@@ -46,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `gift_pack` (
   `updated_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_gift_pack_active_sort` (`active`, `sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
 -- redemption_code：兑换码（奖励中心）
@@ -66,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `redemption_code` (
   UNIQUE KEY `uk_redemption_code` (`code`),
   KEY `idx_redemption_expires` (`expires_at`),
   CONSTRAINT `fk_redemption_creator` FOREIGN KEY (`created_by`) REFERENCES `user` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
 -- redemption_record：用户兑换历史
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS `redemption_record` (
   CONSTRAINT `fk_redeem_code` FOREIGN KEY (`code_id`) REFERENCES `redemption_code` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_redeem_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_redeem_team` FOREIGN KEY (`team_id`) REFERENCES `team` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
 -- tapies_ledger：Tapies 流水（充值/订阅/兑换/礼包/消费）
@@ -109,4 +111,4 @@ CREATE TABLE IF NOT EXISTS `tapies_ledger` (
   KEY `idx_ledger_team_time` (`team_id`, `created_at`),
   CONSTRAINT `fk_ledger_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ledger_team` FOREIGN KEY (`team_id`) REFERENCES `team` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

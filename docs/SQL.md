@@ -351,6 +351,8 @@ mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 
 **关联接口：** 见 [`API.md`](API.md)「计费 `/api/billing`」章节。
 
+> **若报 `ERROR 3780 ... fk_sub_team ... incompatible`：** 说明线上 `team.id` 与计费表 `team_id` 的 **collation** 不一致（常见于 `team` 用 `utf8mb4_unicode_ci`、新表默认 `utf8mb4_0900_ai_ci`）。请使用已带 `COLLATE utf8mb4_unicode_ci` 的脚本版本重新执行；可先 `SHOW CREATE TABLE team\G` 核对 `team.id` 的 collation。
+
 ---
 
 ## 三、表关系概览
