@@ -304,3 +304,43 @@ taptv_favorite(user_id, work_id) 唯一 → 某用户是否收藏；个人主页
 | `GET .../favorites` | 从 Mock 数据过滤 localStorage 中的收藏 id |
 
 见 `frontend/src/utils/taptvLocalState.ts`、`frontend/src/mock/api.ts`。
+
+---
+
+## 计费 `/api/billing`
+
+> 当前订阅 / 充值 / 礼包购买为**模拟支付**（登录后即时到账）。上线接 Stripe/支付宝时替换下单与 webhook 即可，接口路径可保持不变。  
+> SQL：`deploy/sql/add-billing-tables.sql`
+
+### GET `/api/billing/plans?cycle=monthly|yearly|enterprise`
+
+订阅套餐目录。`enterprise` 时返回 Custom 企业版 + `partner_logos`（前端 Logo 跑马灯）。
+
+### POST `/api/billing/subscribe`
+
+订阅套餐。Body：`{ plan_slug, cycle, pro_tapies?, team_id? }`。PRO 需传 `pro_tapies`（如 6000）。企业版：`plan_slug=enterprise`。
+
+### GET `/api/billing/gift-packs`
+
+礼包超市列表。购买：`POST /api/billing/gift-packs/:id/purchase` Body `{ team_id? }`。
+
+### POST `/api/billing/recharge`
+
+充值 Tapies。Body：`{ tapies_amount, team_id? }`。汇率 `$1 = 100 Tapies`；订阅档位可叠加充值赠送。
+
+### GET `/api/billing/team-benefits?team_id=`
+
+团队权益：动态 `public_id`、当前订阅档、成员配额。前端「充值」→ 跳转账户充值页；「升级」→ 跳转订购套餐。
+
+### 奖励中心
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/billing/rewards/redeem` | 兑换码兑换 `{ code, team_id? }` |
+| GET | `/api/billing/rewards/history` | 兑换记录 |
+| POST | `/api/billing/rewards/generate` | **临时**生成兑换码（`BILLING_ALLOW_GENERATE=false` 可关） |
+
+### GET `/api/billing/transactions`
+
+Tapies 交易流水（账单「交易记录」Tab）。
+

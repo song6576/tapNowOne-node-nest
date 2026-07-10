@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
+import { BillingModule } from './billing/billing.module';
 import { TeamsModule } from './teams/teams.module';
 import { TaptvModule } from './taptv/taptv.module';
 import { UploadModule } from './upload/upload.module';
@@ -21,6 +22,7 @@ import { PrismaModule } from './prisma/prisma.module';
     UsersModule,
     TaptvModule,
     TeamsModule,
+    BillingModule,
   ],
   controllers: [HealthController],
 })

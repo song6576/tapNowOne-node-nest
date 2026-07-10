@@ -30,6 +30,7 @@ mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 | 4 | `add-taptv-tables.sql` | TapTV 作品、点赞、收藏、关注 |
 | 5 | `add-team-tables.sql` | 团队、成员、工作空间 `team_id` 隔离 |
 | 6 | `add-team-invite-tables.sql` | 邀请链接、成员配额字段 |
+| 7 | `add-billing-tables.sql` | 订阅、礼包超市、兑换码、Tapies 流水 |
 
 > 方式 B 中 `init-user-table.sql` 已包含个人资料、`tapies_balance`、`active_team_id` 等字段，**无需**再执行 `alter-user-table.sql`、`add-user-profile-fields.sql`、`add-user-profile-text-fields.sql`，以及 `add-team-tables.sql` 里对 user 表的 ALTER 部分。
 
@@ -327,6 +328,28 @@ mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 | `invite_link_id` | 通过哪条链接加入 |
 | `quota_limit` | NULL = 无限 |
 | `quota_used` | 已使用量 |
+
+---
+
+### 10. `add-billing-tables.sql` — 计费（订阅 / 礼包 / 兑换码 / 流水）
+
+**何时用：** 启用订购套餐、礼包超市、充值积分、奖励中心兑换码。线上执行：
+
+```bash
+./deploy/apply-sql.sh add-billing-tables.sql
+```
+
+**表一览：**
+
+| 表 | 用途 |
+|------|------|
+| `user_subscription` | 用户/团队当前订阅（basic/pro/…） |
+| `gift_pack` | 礼包超市商品目录 |
+| `redemption_code` | 兑换码主表 |
+| `redemption_record` | 用户兑换历史 |
+| `tapies_ledger` | Tapies 入账/消费流水 |
+
+**关联接口：** 见 [`API.md`](API.md)「计费 `/api/billing`」章节。
 
 ---
 

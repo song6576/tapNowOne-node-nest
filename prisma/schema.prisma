@@ -39,6 +39,10 @@ model User {
   teamMemberships    TeamMember[]
   createdInviteLinks TeamInviteLink[] @relation("InviteLinkCreator")
   activeTeam         Team?            @relation("ActiveTeam", fields: [activeTeamId], references: [id], onDelete: SetNull)
+  subscriptions      UserSubscription[]
+  redemptionRecords  RedemptionRecord[]
+  tapiesLedger       TapiesLedger[]
+  createdRedemptionCodes RedemptionCode[] @relation("RedemptionCodeCreator")
 
   @@map("user")
 }
@@ -225,6 +229,9 @@ model Team {
   folders      WorkspaceFolder[]
   projects     Project[]
   activeUsers  User[]            @relation("ActiveTeam")
+  subscriptions UserSubscription[]
+  redemptionRecords RedemptionRecord[]
+  tapiesLedger TapiesLedger[]
 
   @@index([ownerId])
   @@map("team")
@@ -270,4 +277,106 @@ model TeamInviteLink {
   @@index([teamId])
   @@index([expiresAt])
   @@map("team_invite_link")
+}
+
+/// 用户/团队订阅。teamId 为空=个人订阅
+model UserSubscription {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    Int       @map("user_id")
+  teamId    String?   @map("team_id") @db.Char(36)
+  planSlug  String    @map("plan_slug") @db.VarChar(32)
+  cycle     String    @db.VarChar(16)
+  proTapies Int?      @map("pro_tapies")
+  status    String    @default("active") @db.VarChar(16)
+  startedAt DateTime  @map("started_at") @db.DateTime(0)
+  expiresAt DateTime? @map("expires_at") @db.DateTime(0)
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.DateTime(0)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+  @@map("user_subscription")
+}
+
+/// 礼包超市商品
+model GiftPack {
+  id             String   @id @default(uuid()) @db.Char(36)
+  modelName      String   @map("model_name") @db.VarChar(64)
+  tier           String   @db.VarChar(32)
+  priceUsdCents  Int      @map("price_usd_cents")
+  tapiesAmount   Int      @map("tapies_amount")
+  tapiesLabel    String   @map("tapies_label") @db.VarChar(128)
+  bgGradient     String   @map("bg_gradient") @db.VarChar(256)
+  stockTotal     Int      @default(100) @map("stock_total")
+  stockRemaining Int      @default(100) @map("stock_remaining")
+  sortOrder      Int      @default(0) @map("sort_order")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+
+  @@index([active, sortOrder])
+  @@map("gift_pack")
+}
+
+/// 兑换码
+model RedemptionCode {
+  id           String    @id @default(uuid()) @db.Char(36)
+  code         String    @unique @db.VarChar(64)
+  activityName String    @map("activity_name") @db.VarChar(255)
+  tapiesAmount Int       @map("tapies_amount")
+  maxUses      Int       @default(1) @map("max_uses")
+  usedCount    Int       @default(0) @map("used_count")
+  expiresAt    DateTime? @map("expires_at") @db.DateTime(0)
+  createdBy    Int?      @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+
+  creator User?              @relation("RedemptionCodeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  records RedemptionRecord[]
+
+  @@index([expiresAt])
+  @@map("redemption_code")
+}
+
+/// 兑换记录
+model RedemptionRecord {
+  id           String   @id @default(uuid()) @db.Char(36)
+  codeId       String   @map("code_id") @db.Char(36)
+  userId       Int      @map("user_id")
+  teamId       String?  @map("team_id") @db.Char(36)
+  codeDisplay  String   @map("code_display") @db.VarChar(64)
+  activityName String   @map("activity_name") @db.VarChar(255)
+  tapiesAmount Int      @map("tapies_amount")
+  redeemedAt   DateTime @default(now()) @map("redeemed_at") @db.DateTime(0)
+
+  code RedemptionCode @relation(fields: [codeId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([userId, redeemedAt])
+  @@map("redemption_record")
+}
+
+/// Tapies 流水
+model TapiesLedger {
+  id            String   @id @default(uuid()) @db.Char(36)
+  userId        Int      @map("user_id")
+  teamId        String?  @map("team_id") @db.Char(36)
+  type          String   @db.VarChar(32)
+  amount        Int
+  balanceAfter  Int      @map("balance_after")
+  description   String   @db.VarChar(512)
+  refType       String?  @map("ref_type") @db.VarChar(32)
+  refId         String?  @map("ref_id") @db.Char(36)
+  operatorEmail String?  @map("operator_email") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([teamId, createdAt])
+  @@map("tapies_ledger")
 }
