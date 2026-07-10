@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
+import { ModelsModule } from './models/models.module';
 import { ProjectsModule } from './projects/projects.module';
 import { BillingModule } from './billing/billing.module';
 import { TeamsModule } from './teams/teams.module';
@@ -17,6 +18,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     AuthModule,
     AgentModule,
+    ModelsModule,
     ProjectsModule,
     UploadModule,
     UsersModule,

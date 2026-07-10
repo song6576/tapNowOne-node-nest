@@ -65,6 +65,47 @@ taptv_favorite(user_id, work_id) 唯一 → 某用户是否收藏；个人主页
 
 ---
 
+### GET `/api/models`
+
+AI 模型目录，无鉴权。供首页与画布节点按类型选用。
+
+**Query：**
+
+| 参数 | 说明 |
+|------|------|
+| `category` | 可选：`text` / `video` / `audio` |
+| `node_type` | 可选：`text` / `image` / `video` / `audio`，按 `node_types` 字段过滤 |
+
+**响应示例：**
+
+```json
+{
+  "models": [
+    {
+      "id": "uuid",
+      "slug": "qwen3.7-plus",
+      "label": "Qwen 3.7 Plus",
+      "category": "text",
+      "description": "适合日常文案、脚本润色与多轮对话…",
+      "usage_hint": "推荐作为 Auto 默认文本模型。",
+      "icon": "Q",
+      "tier": "high",
+      "is_premium": false,
+      "is_coming_soon": false,
+      "node_types": ["text", "image"],
+      "sort_order": 10
+    }
+  ],
+  "coming_soon": [],
+  "by_category": { "text": [], "video": [], "audio": [] },
+  "default_slug": "qwen3.7-plus"
+}
+```
+
+**表：** `ai_model`（见 `deploy/sql/add-ai-model-table.sql`）
+
+---
+
 ### GET `/api/home/dashboard`
 
 首页聚合接口：一次返回精选轮播 + TapTV 预览（默认 8 条），减少前端往返。
