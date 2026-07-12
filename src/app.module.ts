@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ModelsModule } from './models/models.module';
 import { ProjectsModule } from './projects/projects.module';
 import { BillingModule } from './billing/billing.module';
+import { GenerateModule } from './generate/generate.module';
 import { TeamsModule } from './teams/teams.module';
 import { TaptvModule } from './taptv/taptv.module';
 import { UploadModule } from './upload/upload.module';
@@ -25,6 +26,7 @@ import { PrismaModule } from './prisma/prisma.module';
     TaptvModule,
     TeamsModule,
     BillingModule,
+    GenerateModule,
   ],
   controllers: [HealthController],
 })

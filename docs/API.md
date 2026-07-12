@@ -386,3 +386,49 @@ AI 模型目录，无鉴权。供首页与画布节点按类型选用。
 
 Tapies 交易流水（账单「交易记录」Tab）。
 
+---
+
+## 媒体生成 `/api/generate`
+
+画布 image / video / audio 节点生成。前端：`submitGenerate` → `pollTask`。
+
+### POST `/api/generate`
+
+**鉴权：** 必须登录。
+
+**Body：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `node_type` | `image` \| `video` \| `audio` | 节点类型 |
+| `prompt` | string | 提示词 |
+| `model` | string? | 模型 slug，如 `qwen-image-2.0-pro-2026-04-22` |
+| `auto` | boolean? | true 时图片节点用默认图片模型 |
+| `upstream_text` | string? | 上游文本，拼进 prompt |
+| `upstream_image_url` | string? | 上游图片（相对/绝对 URL），有则走指令编辑 |
+| `duration` | number? | 视频时长（秒），当前未接入 |
+
+**响应：** `{ "task_id": "uuid", "state": "pending" }`
+
+**逻辑：**
+1. 创建内存任务（`pending` → `running`）
+2. `image`：调用百炼 `multimodal-generation`（同步），下载 PNG 到 `/uploads/generated/`，任务 `completed` 并返回本地 `result_url`
+3. 无 `DASHSCOPE_API_KEY` 或 `MOCK_MODE=true`：返回 SVG data URL 占位
+4. `video` / `audio`：真实模式暂返回失败；Mock 返回占位图
+
+### GET `/api/tasks/:taskId`
+
+查询任务：`pending` | `running` | `completed` | `failed`。
+
+**响应：** `{ "task_id", "state", "result_url?", "error?" }`
+
+**环境变量：**
+
+| 变量 | 说明 |
+|------|------|
+| `DASHSCOPE_API_KEY` | 百炼 Key |
+| `DASHSCOPE_BASE_URL` | 默认 `https://dashscope.aliyuncs.com/api/v1`，可改 Workspace 域名 |
+| `IMAGE_SIZE` | 默认 `1328*1328` |
+| `PUBLIC_BASE_URL` | 拼上游相对图片 URL，默认 `http://127.0.0.1:PORT` |
+| `MOCK_MODE` | `true` 强制占位图 |
+

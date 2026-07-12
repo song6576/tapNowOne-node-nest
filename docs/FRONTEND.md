@@ -98,7 +98,7 @@ VITE_USE_MOCK=false
 | TapTV 列表/详情 | `mock/api.ts` | `GET /api/taptv` |
 | TapTV 点赞/收藏 | `utils/taptvLocalState.ts` | `POST /api/taptv/:id/like|favorite` |
 | TapTV 我的收藏 | `mock/api.ts` | `GET /api/taptv/favorites` |
-| AI 生成 | `mock/api.ts` | `/api/generate` |
+| AI 生成 | `mock/api.ts` | `POST /api/generate` + `GET /api/tasks/:id` |
 | Agent | `mock/api.ts` | `/api/agent/*` |
 | 视频合成 | `mock/api.ts` | `/api/compose` |
 
