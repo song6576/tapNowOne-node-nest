@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS `ai_model` (
   `id` CHAR(36) NOT NULL PRIMARY KEY COMMENT 'UUID',
   `slug` VARCHAR(64) NOT NULL UNIQUE COMMENT '模型标识，如 qwen3.7-plus',
   `label` VARCHAR(128) NOT NULL COMMENT '展示名称',
-  `category` VARCHAR(16) NOT NULL COMMENT 'text | video | audio',
+  `category` VARCHAR(16) NOT NULL COMMENT 'text | image | video | audio',
   `description` TEXT NOT NULL COMMENT '悬浮说明：适用场景',
   `usage_hint` VARCHAR(512) NULL COMMENT '补充提示，如消耗说明',
   `icon` VARCHAR(8) NOT NULL DEFAULT '·' COMMENT '列表图标字符',
@@ -77,6 +77,15 @@ INSERT INTO `ai_model` (
   '适合多模态理解、长文档分析与创意头脑风暴。',
   '即将开放，敬请期待。',
   '✦', 'high', 1, 1, 'text,image', 110, 1
+),
+(
+  'a1000001-0000-4000-8000-000000000007',
+  'qwen-image-2.0-pro-2026-04-22',
+  'qwen-image-2.0-pro',
+  'image',
+  '通义万相图片生成/编辑满血版：高保真纹理、光影材质与多语言图内文字；支持文生图与指令编辑。',
+  '对应百炼模型 ID qwen-image-2.0-pro-2026-04-22；列表展示为 qwen-image-2.0-pro。',
+  'I', 'high', 1, 0, 'image', 10, 1
 )
 ON DUPLICATE KEY UPDATE
   `label` = VALUES(`label`),

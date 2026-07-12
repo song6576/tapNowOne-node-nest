@@ -7,7 +7,7 @@ export class ModelsController {
 
   /**
    * GET /api/models
-   * Query: category=text|video|audio, node_type=text|image|video|audio
+   * Query: category=text|image|video|audio, node_type=text|image|video|audio
    */
   @Get()
   list(

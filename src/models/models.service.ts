@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type AiModelCategory = 'text' | 'video' | 'audio';
+export type AiModelCategory = 'text' | 'image' | 'video' | 'audio';
 
 export type AiModelDto = {
   id: string;
@@ -77,6 +77,7 @@ export class ModelsService {
 
     const by_category = {
       text: available.filter((m) => m.category === 'text'),
+      image: available.filter((m) => m.category === 'image'),
       video: available.filter((m) => m.category === 'video'),
       audio: available.filter((m) => m.category === 'audio'),
     };
@@ -86,6 +87,7 @@ export class ModelsService {
       coming_soon,
       by_category,
       default_slug: 'qwen3.7-plus',
+      default_image_slug: 'qwen-image-2.0-pro-2026-04-22',
     };
   }
 

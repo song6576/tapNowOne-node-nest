@@ -31,6 +31,8 @@ mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 | 5 | `add-team-tables.sql` | 团队、成员、工作空间 `team_id` 隔离 |
 | 6 | `add-team-invite-tables.sql` | 邀请链接、成员配额字段 |
 | 7 | `add-billing-tables.sql` | 订阅、礼包超市、兑换码、Tapies 流水 |
+| 8 | `add-ai-model-table.sql` | AI 模型目录（含文本/图片/视频/音频） |
+| 9 | `add-qwen-image-model.sql` | 增量：图片模型 qwen-image-2.0-pro |
 
 > 方式 B 中 `init-user-table.sql` 已包含个人资料、`tapies_balance`、`active_team_id` 等字段，**无需**再执行 `alter-user-table.sql`、`add-user-profile-fields.sql`、`add-user-profile-text-fields.sql`，以及 `add-team-tables.sql` 里对 user 表的 ALTER 部分。
 
@@ -352,6 +354,27 @@ mysql -u tapnow -p tapnow < deploy/sql/init-all-tables.sql
 **关联接口：** 见 [`API.md`](API.md)「计费 `/api/billing`」章节。
 
 > **若报 `ERROR 3780 ... fk_sub_team ... incompatible`：** 说明线上 `team.id` 与计费表 `team_id` 的 **collation** 不一致（常见于 `team` 用 `utf8mb4_unicode_ci`、新表默认 `utf8mb4_0900_ai_ci`）。请使用已带 `COLLATE utf8mb4_unicode_ci` 的脚本版本重新执行；可先 `SHOW CREATE TABLE team\G` 核对 `team.id` 的 collation。
+
+---
+
+### 11. `add-ai-model-table.sql` / `add-qwen-image-model.sql` — AI 模型目录
+
+**何时用：** 首页与画布节点模型下拉；`GET /api/models`。
+
+**表 `ai_model`：**
+
+| 字段 | 含义 |
+|------|------|
+| `slug` | API / 内部模型 ID（如 `qwen-image-2.0-pro-2026-04-22`） |
+| `label` | 前端展示名（如 `qwen-image-2.0-pro`） |
+| `category` | `text` / `image` / `video` / `audio` |
+| `node_types` | 适用画布节点，逗号分隔 |
+
+已有 `ai_model` 表时，只需执行增量脚本：
+
+```bash
+./deploy/apply-sql.sh add-qwen-image-model.sql
+```
 
 ---
 

@@ -381,7 +381,7 @@ model TapiesLedger {
   @@map("tapies_ledger")
 }
 
-/// AI 模型目录：按 text / video / audio 分类，供首页与画布节点选用
+/// AI 模型目录：按 text / image / video / audio 分类，供首页与画布节点选用
 model AiModel {
   id           String   @id @default(uuid()) @db.Char(36)
   slug         String   @unique @db.VarChar(64)

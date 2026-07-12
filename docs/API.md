@@ -73,7 +73,7 @@ AI 模型目录，无鉴权。供首页与画布节点按类型选用。
 
 | 参数 | 说明 |
 |------|------|
-| `category` | 可选：`text` / `video` / `audio` |
+| `category` | 可选：`text` / `image` / `video` / `audio` |
 | `node_type` | 可选：`text` / `image` / `video` / `audio`，按 `node_types` 字段过滤 |
 
 **响应示例：**
@@ -97,8 +97,9 @@ AI 模型目录，无鉴权。供首页与画布节点按类型选用。
     }
   ],
   "coming_soon": [],
-  "by_category": { "text": [], "video": [], "audio": [] },
-  "default_slug": "qwen3.7-plus"
+  "by_category": { "text": [], "image": [], "video": [], "audio": [] },
+  "default_slug": "qwen3.7-plus",
+  "default_image_slug": "qwen-image-2.0-pro-2026-04-22"
 }
 ```
 
