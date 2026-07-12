@@ -432,3 +432,5 @@ Tapies 交易流水（账单「交易记录」Tab）。
 | `PUBLIC_BASE_URL` | 拼上游相对图片 URL，默认 `http://127.0.0.1:PORT` |
 | `MOCK_MODE` | `true` 强制占位图 |
 
+> **换 Key / 换其他 AI 平台：** 见 [`AI-PROVIDER.md`](AI-PROVIDER.md)。
+
