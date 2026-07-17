@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { RemoteVideoTask, VideoGenerationInput } from '../ai/ai.types';
+import {
+  normalizeVideoDuration,
+  normalizeVideoRatio,
+  normalizeVideoResolution,
+} from '../ai/video-params';
 
 export type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
@@ -36,6 +42,15 @@ export class DashScopeService {
   /** 多模态生图 API 根路径，可配成 Workspace 专属域名 */
   private get apiBase(): string {
     return (
+      this.config.get<string>('DASHSCOPE_BASE_URL') ||
+      'https://dashscope.aliyuncs.com/api/v1'
+    ).replace(/\/$/, '');
+  }
+
+  /** HappyHorse 等视频生成 API 根路径，可配成 Workspace 专属 MaaS 域名 */
+  private get videoApiBase(): string {
+    return (
+      this.config.get<string>('DASHSCOPE_VIDEO_BASE_URL') ||
       this.config.get<string>('DASHSCOPE_BASE_URL') ||
       'https://dashscope.aliyuncs.com/api/v1'
     ).replace(/\/$/, '');
@@ -159,6 +174,140 @@ export class DashScopeService {
     }
 
     throw new Error('百炼未返回图片地址');
+  }
+
+  /**
+   * HappyHorse 参考生视频（异步）
+   * POST .../services/aigc/video-generation/video-synthesis
+   */
+  async createVideoTask(
+    model: string,
+    input: VideoGenerationInput,
+  ): Promise<string> {
+    const referenceUrls = this.collectReferenceImages(input);
+    const body: Record<string, unknown> = {
+      model,
+      input: {
+        prompt: input.prompt,
+        ...(referenceUrls.length > 0
+          ? {
+              media: referenceUrls.map((url) => ({
+                type: 'reference_image',
+                url,
+              })),
+            }
+          : {}),
+      },
+      parameters: {
+        resolution: normalizeVideoResolution(input.resolution),
+        ratio: normalizeVideoRatio(input.ratio),
+        duration: normalizeVideoDuration(input.duration),
+        watermark: input.watermark ?? false,
+      },
+    };
+
+    const url = `${this.videoApiBase}/services/aigc/video-generation/video-synthesis`;
+    this.logger.log(
+      `DashScope video task model=${model} refs=${referenceUrls.length}`,
+    );
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const raw = await resp.text();
+    if (!resp.ok) {
+      this.logger.error(`DashScope video failed (${resp.status}): ${raw}`);
+      throw new Error(this.parseDashScopeError(raw, resp.status));
+    }
+
+    let data: {
+      output?: { task_id?: string; task_status?: string };
+      code?: string;
+      message?: string;
+    };
+    try {
+      data = JSON.parse(raw) as typeof data;
+    } catch {
+      throw new Error('百炼视频任务返回无法解析');
+    }
+
+    if (data.code && data.message) {
+      throw new Error(`百炼视频任务创建失败：${data.message}`);
+    }
+
+    const taskId = data.output?.task_id;
+    if (!taskId) {
+      throw new Error('百炼视频任务未返回 task_id');
+    }
+    return taskId;
+  }
+
+  async getVideoTask(taskId: string): Promise<RemoteVideoTask> {
+    const url = `${this.videoApiBase}/tasks/${encodeURIComponent(taskId)}`;
+    const resp = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+    });
+
+    const raw = await resp.text();
+    if (!resp.ok) {
+      this.logger.error(`DashScope video poll failed (${resp.status}): ${raw}`);
+      throw new Error(this.parseDashScopeError(raw, resp.status));
+    }
+
+    let data: {
+      output?: {
+        task_status?: string;
+        video_url?: string;
+        message?: string;
+      };
+      code?: string;
+      message?: string;
+    };
+    try {
+      data = JSON.parse(raw) as typeof data;
+    } catch {
+      throw new Error('百炼视频任务状态返回无法解析');
+    }
+
+    if (data.code && data.message) {
+      return { state: 'failed', error: data.message };
+    }
+
+    const status = (data.output?.task_status ?? '').toUpperCase();
+    if (status === 'SUCCEEDED') {
+      const resultUrl = data.output?.video_url;
+      return resultUrl
+        ? { state: 'completed', progress: 100, resultUrl }
+        : { state: 'failed', error: '百炼视频任务成功但未返回视频地址' };
+    }
+    if (['FAILED', 'CANCELED', 'CANCELLED', 'UNKNOWN'].includes(status)) {
+      return {
+        state: 'failed',
+        error: data.output?.message ?? data.message ?? '百炼视频生成失败',
+      };
+    }
+    return {
+      state: status === 'RUNNING' ? 'running' : 'pending',
+    };
+  }
+
+  private collectReferenceImages(input: VideoGenerationInput): string[] {
+    const urls = [
+      ...(input.referenceImageUrls ?? []),
+      ...(input.imageUrl ? [input.imageUrl] : []),
+    ]
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return [...new Set(urls)].slice(0, 9);
   }
 
   private parseDashScopeError(raw: string, status: number): string {

@@ -1,8 +1,12 @@
-import { resolveAgentModel } from './agent-models';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { User } from '@prisma/client';
+import { AiRouterService } from '../ai/ai-router.service';
+import type { AiChatMessage } from '../ai/ai.types';
 import { PrismaService } from '../prisma/prisma.service';
-import { ChatMessage, DashScopeService } from './dashscope.service';
 
 const AGENT_SYSTEM = `你是 TapFlow 创作助手，帮助用户规划 AI 视频/图片工作流，并操作画布节点。回答简洁实用，中文回复。
 
@@ -39,7 +43,7 @@ export type CanvasAction = {
 @Injectable()
 export class AgentService {
   constructor(
-    private readonly dashscope: DashScopeService,
+    private readonly aiRouter: AiRouterService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -51,12 +55,16 @@ export class AgentService {
     projectId?: string,
     model?: string,
     auto = true,
-  ): Promise<{ reply: string; conversationId?: string; actions?: CanvasAction[] }> {
+  ): Promise<{
+    reply: string;
+    conversationId?: string;
+    actions?: CanvasAction[];
+  }> {
     const system = context
       ? `${AGENT_SYSTEM}\n\n当前画布状态：\n${context}`
       : AGENT_SYSTEM;
 
-    let history: ChatMessage[] = [];
+    let history: AiChatMessage[] = [];
     let convId = conversationId;
 
     if (user && projectId) {
@@ -78,25 +86,26 @@ export class AgentService {
       if (!conversation) {
         throw new NotFoundException('对话不存在');
       }
-      if (projectId && conversation.projectId && conversation.projectId !== projectId) {
+      if (
+        projectId &&
+        conversation.projectId &&
+        conversation.projectId !== projectId
+      ) {
         throw new BadRequestException('对话与项目不匹配');
       }
       history = conversation.messages.map((m) => ({
-        role: m.role as ChatMessage['role'],
+        role: m.role as AiChatMessage['role'],
         content: m.content,
       }));
     }
 
-    const messages: ChatMessage[] = [
+    const messages: AiChatMessage[] = [
       { role: 'system', content: system },
       ...history,
       { role: 'user', content: message },
     ];
 
-    const rawReply = await this.dashscope.chatCompletion(
-      messages,
-      resolveAgentModel(model, auto),
-    );
+    const rawReply = await this.aiRouter.chat(messages, model, auto);
     const { reply, actions } = this.parseCanvasActions(rawReply);
 
     if (user) {
@@ -163,7 +172,7 @@ export class AgentService {
     model?: string,
     auto = true,
   ): Promise<StoryboardScene[]> {
-    const content = await this.dashscope.chatCompletion(
+    const content = await this.aiRouter.chat(
       [
         { role: 'system', content: STORYBOARD_SYSTEM },
         {
@@ -171,7 +180,8 @@ export class AgentService {
           content: `请将以下脚本拆分为分镜：\n\n${script}`,
         },
       ],
-      resolveAgentModel(model, auto),
+      model,
+      auto,
     );
     return this.parseStoryboardJson(content);
   }
@@ -200,7 +210,7 @@ export class AgentService {
       if (!item || typeof item !== 'object') continue;
       const row = item as Record<string, unknown>;
       if (row.type !== 'add_node') continue;
-      const nodeType = String(row.node_type ?? '');
+      const nodeType = typeof row.node_type === 'string' ? row.node_type : '';
       if (!allowed.has(nodeType)) continue;
       const countRaw = Number(row.count ?? 1);
       const count = Number.isFinite(countRaw)
@@ -210,9 +220,13 @@ export class AgentService {
         type: 'add_node',
         node_type: nodeType as CanvasAction['node_type'],
         label:
-          typeof row.label === 'string' ? row.label.trim() || undefined : undefined,
+          typeof row.label === 'string'
+            ? row.label.trim() || undefined
+            : undefined,
         prompt:
-          typeof row.prompt === 'string' ? row.prompt.trim() || undefined : undefined,
+          typeof row.prompt === 'string'
+            ? row.prompt.trim() || undefined
+            : undefined,
         count,
       });
     }

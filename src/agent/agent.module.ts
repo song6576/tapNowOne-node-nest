@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
+import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { AgentController } from './agent.controller';
 import { AgentService } from './agent.service';
-import { DashScopeService } from './dashscope.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AiModule],
   controllers: [AgentController],
-  providers: [DashScopeService, AgentService],
-  exports: [DashScopeService],
+  providers: [AgentService],
 })
 export class AgentModule {}

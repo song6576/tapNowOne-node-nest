@@ -6,6 +6,8 @@ export type AiModelCategory = 'text' | 'image' | 'video' | 'audio';
 export type AiModelDto = {
   id: string;
   slug: string;
+  provider: string;
+  provider_model_id: string;
   label: string;
   category: AiModelCategory;
   description: string;
@@ -25,6 +27,8 @@ export class ModelsService {
   private toDto(row: {
     id: string;
     slug: string;
+    provider: string;
+    providerModelId: string;
     label: string;
     category: string;
     description: string;
@@ -39,6 +43,8 @@ export class ModelsService {
     return {
       id: row.id,
       slug: row.slug,
+      provider: row.provider,
+      provider_model_id: row.providerModelId,
       label: row.label,
       category: row.category as AiModelCategory,
       description: row.description,
@@ -88,14 +94,24 @@ export class ModelsService {
       by_category,
       default_slug: 'qwen3.7-plus',
       default_image_slug: 'qwen-image-2.0-pro-2026-04-22',
+      default_video_slug: 'happyhorse-1.1-r2v',
+      default_audio_slug: 'sambert-zhide-v1',
     };
   }
 
-  /** 校验 Agent 请求中的 model slug */
-  async isAllowedSlug(slug: string): Promise<boolean> {
+  /** 解析可调用模型；provider 路由和节点分类校验以数据库为唯一来源 */
+  async resolveModel(slug: string, category?: AiModelCategory) {
     const row = await this.prisma.aiModel.findFirst({
       where: { slug, active: true, isComingSoon: false },
     });
-    return !!row;
+    if (!row || (category && row.category !== category)) return null;
+    return {
+      ...this.toDto(row),
+      providerModelId: row.providerModelId,
+    };
+  }
+
+  async isAllowedSlug(slug: string): Promise<boolean> {
+    return Boolean(await this.resolveModel(slug));
   }
 }

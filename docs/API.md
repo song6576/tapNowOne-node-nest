@@ -390,7 +390,7 @@ Tapies 交易流水（账单「交易记录」Tab）。
 
 ## 媒体生成 `/api/generate`
 
-画布 image / video / audio 节点生成。前端：`submitGenerate` → `pollTask`。
+画布 image / video / audio 节点生成。模型由 `ai_model.provider` 路由到百炼或火山方舟。前端：`submitGenerate` → `pollTask`。
 
 ### POST `/api/generate`
 
@@ -403,24 +403,25 @@ Tapies 交易流水（账单「交易记录」Tab）。
 | `node_type` | `image` \| `video` \| `audio` | 节点类型 |
 | `prompt` | string | 提示词 |
 | `model` | string? | 模型 slug，如 `qwen-image-2.0-pro-2026-04-22` |
-| `auto` | boolean? | true 时图片节点用默认图片模型 |
+| `auto` | boolean? | true 时按节点分类使用默认模型 |
 | `upstream_text` | string? | 上游文本，拼进 prompt |
 | `upstream_image_url` | string? | 上游图片（相对/绝对 URL），有则走指令编辑 |
-| `duration` | number? | 视频时长（秒），当前未接入 |
+| `duration` | number? | 视频时长（秒），1–30 |
 
 **响应：** `{ "task_id": "uuid", "state": "pending" }`
 
 **逻辑：**
-1. 创建内存任务（`pending` → `running`）
-2. `image`：调用百炼 `multimodal-generation`（同步），下载 PNG 到 `/uploads/generated/`，任务 `completed` 并返回本地 `result_url`
-3. 无 `DASHSCOPE_API_KEY` 或 `MOCK_MODE=true`：返回 SVG data URL 占位
-4. `video` / `audio`：真实模式暂返回失败；Mock 返回占位图
+1. 创建数据库任务（`pending` → `running`），服务重启后仍可查询；方舟视频任务可恢复轮询。
+2. `image`：按模型调用百炼或方舟 Seedream，并把临时结果下载到 `/uploads/generated/`。
+3. `video`：调用方舟 Seedance 创建异步任务，后台轮询完成后下载 MP4 到本地。
+4. `audio`：本期不生成，可上传已有音频用于视频合成。
+5. `MOCK_MODE=true`：不调用供应商，返回占位结果。
 
 ### GET `/api/tasks/:taskId`
 
-查询任务：`pending` | `running` | `completed` | `failed`。
+必须登录且只能查询自己的任务。状态：`pending` | `running` | `completed` | `failed`。
 
-**响应：** `{ "task_id", "state", "result_url?", "error?" }`
+**响应：** `{ "task_id", "state", "progress", "result_url?", "error?" }`
 
 **环境变量：**
 
@@ -428,9 +429,50 @@ Tapies 交易流水（账单「交易记录」Tab）。
 |------|------|
 | `DASHSCOPE_API_KEY` | 百炼 Key |
 | `DASHSCOPE_BASE_URL` | 默认 `https://dashscope.aliyuncs.com/api/v1`，可改 Workspace 域名 |
+| `ARK_API_KEY` | 火山方舟 Key |
+| `ARK_BASE_URL` | 默认 `https://ark.cn-beijing.volces.com/api/v3` |
 | `IMAGE_SIZE` | 默认 `1328*1328` |
+| `VIDEO_RESOLUTION` | 默认 `720p` |
+| `VIDEO_RATIO` | 默认 `16:9` |
 | `PUBLIC_BASE_URL` | 拼上游相对图片 URL，默认 `http://127.0.0.1:PORT` |
 | `MOCK_MODE` | `true` 强制占位图 |
 
 > **换 Key / 换其他 AI 平台：** 见 [`AI-PROVIDER.md`](AI-PROVIDER.md)。
+
+---
+
+## 动态视频合成 `/api/compose`
+
+### POST `/api/compose`
+
+**鉴权：** 必须登录。根据画布工作流提交视频轨、字幕轨和音频轨，后端异步调用本机 FFmpeg。
+
+```json
+{
+  "clips": [
+    {
+      "node_id": "node-1",
+      "url": "/uploads/generated/clip.mp4",
+      "type": "video",
+      "duration": 5
+    }
+  ],
+  "captions": [{ "text": "字幕", "start": 0, "end": 5 }],
+  "audio_tracks": [
+    { "url": "/uploads/user/audio.mp3", "start": 0, "volume": 1 }
+  ],
+  "width": 1280,
+  "height": 720,
+  "fps": 30
+}
+```
+
+返回 `{ "task_id": "uuid", "state": "pending" }`，继续轮询 `GET /api/tasks/:taskId`。成功结果保存到 `/uploads/outputs/{userId}/{uuid}.mp4`。
+
+限制：
+- 本地媒体必须位于 `/uploads`；远程域名必须加入 `COMPOSE_REMOTE_HOSTS`。
+- 总时长上限 30 分钟，片段最多 100 个，音轨最多 32 条。
+- 服务器需安装带 `libx264` 和 `overlay` filter 的 FFmpeg；字幕先由 Sharp 渲染为透明图层，不依赖 `libass`。
+
+相关变量：`FFMPEG_PATH`（默认 `ffmpeg`）、`COMPOSE_REMOTE_HOSTS`、`MEDIA_DOWNLOAD_MAX_BYTES`。
 

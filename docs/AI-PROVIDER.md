@@ -1,20 +1,20 @@
 # AI 平台 Key 与切换说明
 
-本文说明：**当前阿里云百炼（DashScope）的 Key 改哪里**，以及**换成其他平台时要动哪些地方**。  
-相关代码：`src/agent/dashscope.service.ts`（对话 + 文生图）。
+本文说明百炼与火山方舟双 Provider 的配置、模型目录和路由方式。
+相关代码：`src/ai/ai-router.service.ts`、`src/ai/ark.service.ts`、`src/agent/dashscope.service.ts`。
 
 ---
 
 ## 一、当前架构（一句话）
 
-前端不持有模型 Key。所有 Agent 对话、分镜、图片生成都由后端读取环境变量，再请求第三方 API。
+前端不持有模型 Key。前端只提交模型 slug，后端查询 `ai_model` 的 `provider/provider_model_id` 后路由。
 
 ```
 前端 /api/agent、/api/generate
         ↓
- NestJS DashScopeService
+ NestJS AiRouterService
         ↓
- 百炼 / 其他平台 API（Bearer Key）
+ DashScopeService 或 ArkService
 ```
 
 ---
@@ -91,7 +91,45 @@ curl -s http://127.0.0.1:3000/api/health
 
 ---
 
-## 三、换成其他平台（不能只改 Key）
+## 三、火山方舟配置
+
+```env
+ARK_API_KEY=ark-请使用控制台新建的Key
+ARK_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+VIDEO_RESOLUTION=720p
+VIDEO_RATIO=16:9
+```
+
+已注册模型：
+
+- `deepseek-v4-flash-260425`：文本
+- `doubao-seedream-4-0-250828`：图片
+- `doubao-seedance-2-0-mini-260615`：视频
+
+`doubao-seedream-5-0-260128` 是图片模型，不应注册为文本模型。方舟图片和视频返回的临时 URL 会下载到 `/uploads/generated`。
+
+豆包语音不复用 `ARK_API_KEY`，需要语音服务独立的 AppID 与 Access Token，本期未接入生成；上传的音频仍可进入 FFmpeg 合成。
+
+数据库升级：
+
+```bash
+cd backend-nest
+prisma db execute --file prisma/migrations/add_ark_models_and_tasks.sql --schema prisma/schema.prisma
+prisma generate
+```
+
+健康检查返回：
+
+```json
+{
+  "providers": { "dashscope": true, "ark": true },
+  "ffmpeg_configured": true
+}
+```
+
+---
+
+## 四、换成其他平台（不能只改 Key）
 
 百炼的 **URL、请求体、响应字段** 与其他平台不同。换平台时至少要改：
 
@@ -106,7 +144,7 @@ curl -s http://127.0.0.1:3000/api/health
 
 ---
 
-## 四、简单实例：换成 OpenAI 兼容接口
+## 五、简单实例：换成 OpenAI 兼容接口
 
 许多平台（OpenAI、部分国产网关、硅基流动等）提供与 OpenAI 类似的：
 
@@ -236,7 +274,7 @@ VALUES (
 
 ---
 
-## 五、推荐演进（多平台长期维护）
+## 六、推荐演进（多平台长期维护）
 
 ```
 .env
@@ -255,7 +293,7 @@ src/agent/providers/
 
 ---
 
-## 六、检查清单
+## 七、检查清单
 
 换 Key（仍用百炼）：
 
@@ -274,7 +312,7 @@ src/agent/providers/
 
 ---
 
-## 七、相关文件索引
+## 八、相关文件索引
 
 | 文件 | 说明 |
 |------|------|

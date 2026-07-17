@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AiModule } from './ai/ai.module';
+import { ComposeModule } from './compose/compose.module';
 import { AgentModule } from './agent/agent.module';
 import { AuthModule } from './auth/auth.module';
 import { ModelsModule } from './models/models.module';
@@ -17,6 +19,7 @@ import { PrismaModule } from './prisma/prisma.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
+    AiModule,
     AuthModule,
     AgentModule,
     ModelsModule,
@@ -27,6 +30,7 @@ import { PrismaModule } from './prisma/prisma.module';
     TeamsModule,
     BillingModule,
     GenerateModule,
+    ComposeModule,
   ],
   controllers: [HealthController],
 })

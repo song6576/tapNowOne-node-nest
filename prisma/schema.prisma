@@ -43,6 +43,7 @@ model User {
   redemptionRecords  RedemptionRecord[]
   tapiesLedger       TapiesLedger[]
   createdRedemptionCodes RedemptionCode[] @relation("RedemptionCodeCreator")
+  generationTasks    GenerationTask[]
 
   @@map("user")
 }
@@ -385,6 +386,8 @@ model TapiesLedger {
 model AiModel {
   id           String   @id @default(uuid()) @db.Char(36)
   slug         String   @unique @db.VarChar(64)
+  provider     String   @default("dashscope") @db.VarChar(32)
+  providerModelId String @map("provider_model_id") @db.VarChar(128)
   label        String   @db.VarChar(128)
   category     String   @db.VarChar(16)
   description  String   @db.Text
@@ -401,4 +404,28 @@ model AiModel {
 
   @@index([category, active, sortOrder])
   @@map("ai_model")
+}
+
+/// AI 生成/合成任务：跨进程保存方舟长任务及 FFmpeg 导出状态
+model GenerationTask {
+  id             String   @id @default(uuid()) @db.Char(36)
+  userId         Int      @map("user_id")
+  kind           String   @db.VarChar(16)
+  nodeType       String?  @map("node_type") @db.VarChar(16)
+  provider       String?  @db.VarChar(32)
+  providerTaskId String?  @map("provider_task_id") @db.VarChar(128)
+  state          String   @default("pending") @db.VarChar(16)
+  progress       Int      @default(0)
+  resultUrl      String?  @map("result_url") @db.VarChar(1024)
+  error          String?  @db.Text
+  metadata       String?  @db.LongText
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(0)
+  expiresAt      DateTime @map("expires_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([state, expiresAt])
+  @@map("generation_task")
 }

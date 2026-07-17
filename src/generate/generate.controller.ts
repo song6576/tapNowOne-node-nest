@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { User } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GenerateDto } from './dto/generate.dto';
 import { GenerateService } from './generate.service';
@@ -13,8 +22,8 @@ export class GenerateController {
    */
   @Post('generate')
   @UseGuards(JwtAuthGuard)
-  submit(@Body() dto: GenerateDto) {
-    return this.generateService.submit(dto);
+  submit(@Body() dto: GenerateDto, @Req() req: { user: User }) {
+    return this.generateService.submit(dto, req.user.id);
   }
 
   /**
@@ -22,7 +31,8 @@ export class GenerateController {
    * 查询生成任务状态：pending | running | completed | failed
    */
   @Get('tasks/:taskId')
-  getTask(@Param('taskId') taskId: string) {
-    return this.generateService.getTask(taskId);
+  @UseGuards(JwtAuthGuard)
+  getTask(@Param('taskId') taskId: string, @Req() req: { user: User }) {
+    return this.generateService.getTask(taskId, req.user.id);
   }
 }

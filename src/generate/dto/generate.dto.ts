@@ -1,4 +1,16 @@
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
+import { VIDEO_RATIOS, VIDEO_RESOLUTIONS } from '../../ai/video-params';
 
 export class GenerateDto {
   @IsIn(['image', 'video', 'audio'])
@@ -29,8 +41,26 @@ export class GenerateDto {
   upstream_image_url?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(2048, { each: true })
+  upstream_image_urls?: string[];
+
+  @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(30)
+  @Min(3)
+  @Max(15)
   duration?: number;
+
+  @IsOptional()
+  @IsIn([...VIDEO_RESOLUTIONS])
+  resolution?: string;
+
+  @IsOptional()
+  @IsIn([...VIDEO_RATIOS])
+  ratio?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  watermark?: boolean;
 }

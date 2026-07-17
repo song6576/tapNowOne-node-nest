@@ -1,12 +1,16 @@
 import { Controller, Get } from '@nestjs/common';
-import { DashScopeService } from './agent/dashscope.service';
+import { ConfigService } from '@nestjs/config';
+import { AiRouterService } from './ai/ai-router.service';
+import { FfmpegRunner } from './compose/ffmpeg.runner';
 import { PrismaService } from './prisma/prisma.service';
 
 @Controller('api')
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly dashscope: DashScopeService,
+    private readonly aiRouter: AiRouterService,
+    private readonly ffmpeg: FfmpegRunner,
+    private readonly config: ConfigService,
   ) {}
 
   @Get('health')
@@ -27,8 +31,13 @@ export class HealthController {
       service: 'tapnow-backend-nest',
       auth: true,
       database,
-      mock_mode: this.dashscope.mockMode,
-      dashscope_configured: this.dashscope.isConfigured,
+      mock_mode: ['1', 'true', 'yes'].includes(
+        this.config.get<string>('MOCK_MODE', '').toLowerCase(),
+      ),
+      providers: this.aiRouter.providersConfigured,
+      dashscope_configured: this.aiRouter.providersConfigured.dashscope,
+      ark_configured: this.aiRouter.providersConfigured.ark,
+      ffmpeg_configured: await this.ffmpeg.isAvailable(),
       ...(databaseError && { databaseError }),
     };
   }
