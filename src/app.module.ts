@@ -12,6 +12,7 @@ import { TeamsModule } from './teams/teams.module';
 import { TaptvModule } from './taptv/taptv.module';
 import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
+import { FavoritesModule } from './favorites/favorites.module';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -27,6 +28,7 @@ import { PrismaModule } from './prisma/prisma.module';
     UploadModule,
     UsersModule,
     TaptvModule,
+    FavoritesModule,
     TeamsModule,
     BillingModule,
     GenerateModule,

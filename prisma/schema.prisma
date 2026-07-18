@@ -44,6 +44,7 @@ model User {
   tapiesLedger       TapiesLedger[]
   createdRedemptionCodes RedemptionCode[] @relation("RedemptionCodeCreator")
   generationTasks    GenerationTask[]
+  mediaFavorites     UserMediaFavorite[]
 
   @@map("user")
 }
@@ -199,6 +200,26 @@ model TapTVFavorite {
   @@unique([userId, workId])
   @@index([workId])
   @@map("taptv_favorite")
+}
+
+/// 画布素材收藏（视频/图片）；个人主页「我的收藏」与 TapTV 收藏一并展示
+model UserMediaFavorite {
+  id           String   @id @default(uuid()) @db.Char(36)
+  userId       Int      @map("user_id")
+  mediaUrl     String   @map("media_url") @db.VarChar(1024)
+  mediaUrlHash String   @map("media_url_hash") @db.VarChar(64)
+  mediaType    String   @map("media_type") @db.VarChar(16) /// video | image
+  title        String?  @db.VarChar(255)
+  coverUrl     String?  @map("cover_url") @db.VarChar(1024)
+  projectId    String?  @map("project_id") @db.Char(36)
+  nodeId       String?  @map("node_id") @db.VarChar(64)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaUrlHash])
+  @@index([userId, createdAt])
+  @@map("user_media_favorite")
 }
 
 model UserFollow {

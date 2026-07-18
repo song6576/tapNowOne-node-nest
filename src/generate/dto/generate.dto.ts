@@ -8,7 +8,6 @@ import {
   Max,
   MaxLength,
   Min,
-  MinLength,
 } from 'class-validator';
 import { VIDEO_RATIOS, VIDEO_RESOLUTIONS } from '../../ai/video-params';
 
@@ -17,9 +16,9 @@ export class GenerateDto {
   node_type!: 'image' | 'video' | 'audio';
 
   @IsString()
-  @MinLength(1)
+  @IsOptional()
   @MaxLength(4000)
-  prompt!: string;
+  prompt?: string;
 
   @IsOptional()
   @IsString()

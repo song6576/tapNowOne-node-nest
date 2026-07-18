@@ -51,16 +51,16 @@ export class GenerateService implements OnModuleInit {
     dto: GenerateDto,
     userId: number,
   ): Promise<Pick<GenerateTask, 'task_id' | 'state'>> {
-    const prompt = dto.prompt.trim();
+    const prompt = this.buildPrompt(dto);
     if (!prompt) throw new BadRequestException('prompt 不能为空');
 
     const task = await this.tasks.create({
       userId,
       kind: 'generate',
       nodeType: dto.node_type,
-      metadata: JSON.stringify(dto),
+      metadata: JSON.stringify({ ...dto, prompt }),
     });
-    void this.runTask(task.task_id, dto, userId).catch((err) => {
+    void this.runTask(task.task_id, { ...dto, prompt, upstream_text: undefined }, userId).catch((err) => {
       this.logger.error(
         `task ${task.task_id} crashed: ${err instanceof Error ? err.message : err}`,
       );
@@ -90,7 +90,7 @@ export class GenerateService implements OnModuleInit {
     await this.tasks.update(taskId, { state: 'running', progress: 5 });
     try {
       if (this.isForcedMock) {
-        const url = this.mockPlaceholder(dto.node_type, dto.prompt);
+        const url = this.mockPlaceholder(dto.node_type, dto.prompt ?? '');
         await this.tasks.update(taskId, {
           state: 'completed',
           progress: 100,
@@ -217,11 +217,10 @@ export class GenerateService implements OnModuleInit {
   }
 
   private buildPrompt(dto: GenerateDto): string {
-    const parts = [dto.prompt.trim()];
-    if (dto.upstream_text?.trim()) {
-      parts.unshift(`参考上文：${dto.upstream_text.trim()}`);
-    }
-    return parts.join('\n');
+    const upstream = dto.upstream_text?.trim() ?? ''
+    const self = dto.prompt?.trim() ?? ''
+    if (upstream && self) return `${upstream}${self}`
+    return self || upstream
   }
 
   /** 将供应商临时 URL / base64 保存到对象存储（或本地 uploads），避免链接过期 */
