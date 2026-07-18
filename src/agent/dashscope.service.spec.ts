@@ -66,6 +66,42 @@ describe('DashScopeService video', () => {
     );
   });
 
+  it('rejects localhost reference images for HappyHorse', async () => {
+    await expect(
+      service.createVideoTask('happyhorse-1.1-r2v', {
+        prompt: 'a cat walking',
+        imageUrl: 'http://127.0.0.1:3000/uploads/a.jpg',
+      }),
+    ).rejects.toThrow(/公网/);
+  });
+
+  it('requires media for HappyHorse r2v', async () => {
+    await expect(
+      service.createVideoTask('happyhorse-1.1-r2v', {
+        prompt: 'a cat walking',
+      }),
+    ).rejects.toThrow(/参考图/);
+  });
+
+  it('auto-prefixes [Image N] when prompt has no refs', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ output: { task_id: 'task-hh-2', task_status: 'PENDING' } }),
+        { status: 200 },
+      ),
+    );
+
+    await service.createVideoTask('happyhorse-1.1-r2v', {
+      prompt: '在草地上奔跑',
+      referenceImageUrls: ['https://cdn/a.jpg'],
+    });
+
+    const body = JSON.parse(
+      (global.fetch as jest.Mock).mock.calls[0][1].body as string,
+    ) as { input: { prompt: string } };
+    expect(body.input.prompt).toBe('[Image 1]在草地上奔跑');
+  });
+
   it('maps DashScope task success and failure states', async () => {
     global.fetch = jest
       .fn()

@@ -34,6 +34,8 @@ export const UPLOAD_MAX_BYTES: Record<UploadCategory, number> = {
 
 export type SavedUpload = {
   url: string;
+  /** 对象存储 key（本地上传时可能为空） */
+  key?: string;
   filename: string;
   mime_type: string;
   size: number;

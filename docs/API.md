@@ -388,6 +388,35 @@ Tapies 交易流水（账单「交易记录」Tab）。
 
 ---
 
+## 上传 `/api/uploads`
+
+画布素材与生成物存储。配置 `CTYUN_AK` / `CTYUN_SK` 后启用天翼云对象存储（S3 兼容）：
+
+- **桶**：保持私有  
+- **上传**：预签名 PUT 直传，或 `POST /api/uploads` multipart（服务端代传）  
+- **读**：对象设 `public-read`，返回稳定 HTTPS（默认域名 `CTYUN_PUBLIC_BASE`，备案后可换 CDN）  
+- **路径**：`users/{userId}/projects/{projectId}/{uuid}.ext`、`users/{userId}/generated/{uuid}.ext`
+
+未配置天翼云时回退本地 `uploads/`。
+
+### POST `/api/uploads/presign`
+
+申请直传凭证。Body：`{ filename, content_type, category?, project_id?, size? }`  
+返回：`{ key, upload_url, public_url, headers, expires_in }`
+
+### POST `/api/uploads/complete`
+
+直传完成后校验对象并设公共读。Body：`{ key, filename?, mime_type?, size?, category? }`  
+返回：`SavedUpload`（含稳定 `url`）
+
+### POST `/api/uploads`
+
+传统 multipart 上传；已启用对象存储时同样落到桶并返回 HTTPS。
+
+> **浏览器直传**：桶 CORS 需放行前端源（如 `http://localhost:5173`）的 `PUT` / `GET` / `HEAD`，允许头 `Content-Type`、`x-amz-*`。
+
+---
+
 ## 媒体生成 `/api/generate`
 
 画布 image / video / audio 节点生成。模型由 `ai_model.provider` 路由到百炼或火山方舟。前端：`submitGenerate` → `pollTask`。
@@ -412,8 +441,8 @@ Tapies 交易流水（账单「交易记录」Tab）。
 
 **逻辑：**
 1. 创建数据库任务（`pending` → `running`），服务重启后仍可查询；方舟视频任务可恢复轮询。
-2. `image`：按模型调用百炼或方舟 Seedream，并把临时结果下载到 `/uploads/generated/`。
-3. `video`：调用方舟 Seedance 创建异步任务，后台轮询完成后下载 MP4 到本地。
+2. `image`：按模型调用百炼或方舟 Seedream，并把临时结果下载到对象存储（或 `/uploads/generated/`）。
+3. `video`：调用百炼 HappyHorse / 方舟 Seedance 创建异步任务，后台轮询完成后下载 MP4 落到对象存储。
 4. `audio`：本期不生成，可上传已有音频用于视频合成。
 5. `MOCK_MODE=true`：不调用供应商，返回占位结果。
 

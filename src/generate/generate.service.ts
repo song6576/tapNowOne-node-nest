@@ -6,28 +6,22 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mkdir, writeFile } from 'fs/promises';
-import { extname, join } from 'path';
-import { randomUUID } from 'crypto';
 import { AiRouterService } from '../ai/ai-router.service';
+import { UploadService } from '../upload/upload.service';
 import { GenerateDto } from './dto/generate.dto';
 import { TaskStore, type GenerateTask } from './task-store';
 
 @Injectable()
 export class GenerateService implements OnModuleInit {
   private readonly logger = new Logger(GenerateService.name);
-  private readonly uploadRoot: string;
   private readonly publicBase: string;
 
   constructor(
     private readonly tasks: TaskStore,
     private readonly aiRouter: AiRouterService,
     private readonly config: ConfigService,
+    private readonly uploadService: UploadService,
   ) {
-    this.uploadRoot = config.get<string>(
-      'UPLOAD_DIR',
-      join(process.cwd(), 'uploads'),
-    );
     this.publicBase = (
       config.get<string>('PUBLIC_BASE_URL') ||
       `http://127.0.0.1:${config.get<number>('PORT', 3000)}`
@@ -66,7 +60,7 @@ export class GenerateService implements OnModuleInit {
       nodeType: dto.node_type,
       metadata: JSON.stringify(dto),
     });
-    void this.runTask(task.task_id, dto).catch((err) => {
+    void this.runTask(task.task_id, dto, userId).catch((err) => {
       this.logger.error(
         `task ${task.task_id} crashed: ${err instanceof Error ? err.message : err}`,
       );
@@ -92,7 +86,7 @@ export class GenerateService implements OnModuleInit {
     };
   }
 
-  private async runTask(taskId: string, dto: GenerateDto) {
+  private async runTask(taskId: string, dto: GenerateDto, userId: number) {
     await this.tasks.update(taskId, { state: 'running', progress: 5 });
     try {
       if (this.isForcedMock) {
@@ -119,7 +113,7 @@ export class GenerateService implements OnModuleInit {
           provider: result.provider,
           progress: 80,
         });
-        const url = await this.persistRemoteMedia(result.url, 'image');
+        const url = await this.persistRemoteMedia(result.url, 'image', userId);
         await this.tasks.update(taskId, {
           state: 'completed',
           progress: 100,
@@ -157,7 +151,7 @@ export class GenerateService implements OnModuleInit {
           provider_task_id: remote.taskId,
           progress: 10,
         });
-        await this.pollVideoTask(taskId, remote.provider, remote.taskId);
+        await this.pollVideoTask(taskId, remote.provider, remote.taskId, userId);
         return;
       }
 
@@ -178,6 +172,7 @@ export class GenerateService implements OnModuleInit {
         task.task_id,
         task.provider!,
         task.provider_task_id!,
+        task.user_id,
       );
     } catch (err) {
       await this.tasks.update(task.task_id, {
@@ -191,6 +186,7 @@ export class GenerateService implements OnModuleInit {
     taskId: string,
     provider: string,
     providerTaskId: string,
+    userId: number,
   ) {
     const maxAttempts = this.config.get<number>('VIDEO_POLL_MAX_ATTEMPTS', 150);
     const intervalMs = this.config.get<number>('VIDEO_POLL_INTERVAL_MS', 8_000);
@@ -201,7 +197,7 @@ export class GenerateService implements OnModuleInit {
         throw new Error(remote.error ?? '视频生成失败');
       }
       if (remote.state === 'completed' && remote.resultUrl) {
-        const url = await this.persistRemoteMedia(remote.resultUrl, 'video');
+        const url = await this.persistRemoteMedia(remote.resultUrl, 'video', userId);
         await this.tasks.update(taskId, {
           state: 'completed',
           progress: 100,
@@ -228,10 +224,11 @@ export class GenerateService implements OnModuleInit {
     return parts.join('\n');
   }
 
-  /** 将供应商临时 URL / base64 保存到 uploads，避免链接过期 */
+  /** 将供应商临时 URL / base64 保存到对象存储（或本地 uploads），避免链接过期 */
   private async persistRemoteMedia(
     remoteUrl: string,
     kind: 'image' | 'video',
+    userId: number,
   ): Promise<string> {
     let buffer: Buffer;
     let contentType = '';
@@ -263,29 +260,12 @@ export class GenerateService implements OnModuleInit {
       }
     }
 
-    const extension = this.mediaExtension(contentType, remoteUrl, kind);
-    const dir = join(this.uploadRoot, 'generated');
-    await mkdir(dir, { recursive: true });
-    const filename = `${randomUUID()}${extension}`;
-    await writeFile(join(dir, filename), buffer);
-    return `/uploads/generated/${filename}`;
-  }
-
-  private mediaExtension(
-    contentType: string,
-    url: string,
-    kind: 'image' | 'video',
-  ): string {
-    if (contentType.includes('jpeg')) return '.jpg';
-    if (contentType.includes('webp')) return '.webp';
-    if (contentType.includes('gif')) return '.gif';
-    if (contentType.includes('mp4')) return '.mp4';
-    if (contentType.includes('webm')) return '.webm';
-    const fromUrl = extname(
-      new URL(url, this.publicBase).pathname,
-    ).toLowerCase();
-    if (/^\.[a-z0-9]{2,5}$/.test(fromUrl)) return fromUrl;
-    return kind === 'video' ? '.mp4' : '.png';
+    return this.uploadService.persistGeneratedBuffer({
+      userId,
+      buffer,
+      contentType,
+      kind,
+    });
   }
 
   private toAbsoluteUrl(url?: string): string | undefined {

@@ -179,16 +179,35 @@ export class DashScopeService {
   /**
    * HappyHorse 参考生视频（异步）
    * POST .../services/aigc/video-generation/video-synthesis
+   *
+   * 官方要求：media 必填（1~9 张公网可访问参考图）；prompt 用 [Image N] 指代。
+   * parameters 与文档一致：resolution / ratio / duration / watermark。
    */
   async createVideoTask(
     model: string,
     input: VideoGenerationInput,
   ): Promise<string> {
     const referenceUrls = this.collectReferenceImages(input);
+    const requiresMedia = /happyhorse/i.test(model) && /r2v/i.test(model);
+
+    if (requiresMedia && referenceUrls.length === 0) {
+      throw new Error(
+        'HappyHorse 参考生视频需要至少 1 张参考图：请先连接已生成的图片节点，或上传公网可访问的图片',
+      );
+    }
+
+    const privateUrl = referenceUrls.find((u) => this.isNonPublicMediaUrl(u));
+    if (privateUrl) {
+      throw new Error(
+        `参考图地址百炼无法拉取（需公网 HTTPS）：${privateUrl}。请使用对象存储公网链接，不要使用本机 /uploads 路径`,
+      );
+    }
+
+    const prompt = this.ensureImageRefsInPrompt(input.prompt, referenceUrls.length);
     const body: Record<string, unknown> = {
       model,
       input: {
-        prompt: input.prompt,
+        prompt,
         ...(referenceUrls.length > 0
           ? {
               media: referenceUrls.map((url) => ({
@@ -308,6 +327,35 @@ export class DashScopeService {
       .map((value) => value.trim())
       .filter(Boolean);
     return [...new Set(urls)].slice(0, 9);
+  }
+
+  /** 百炼只能 GET 公网地址，本机/内网会创建任务后失败 */
+  private isNonPublicMediaUrl(url: string): boolean {
+    if (url.startsWith('data:')) return false;
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+        return true;
+      }
+      if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host)) {
+        return true;
+      }
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  /** 未写 [Image N] 时自动补前缀，对齐官方示例 */
+  private ensureImageRefsInPrompt(prompt: string, imageCount: number): string {
+    const text = prompt.trim();
+    if (imageCount <= 0 || /\[Image\s*\d+\]/i.test(text)) return text;
+    const refs = Array.from(
+      { length: imageCount },
+      (_, i) => `[Image ${i + 1}]`,
+    ).join('');
+    return `${refs}${text}`;
   }
 
   private parseDashScopeError(raw: string, status: number): string {
