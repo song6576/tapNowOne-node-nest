@@ -21,32 +21,36 @@ function toIso(date: Date) {
 
 const SEED_FEATURED = [
   {
-    title: 'TapNow Launches ChatGPT Images 2.0',
-    subtitle: '实现创意·更清晰·更流畅',
-    cover: 'linear-gradient(160deg,#1a1a1a 0%,#4a3728 40%,#8b6914 100%)',
-    link: '/taptv',
+    title: '都挺好',
+    subtitle:
+      '以真实故事讲述青春与成长。告别校园、踏入职场，迷茫是每个人成长路上的必经阶段。故事里的少年，亦是现实中的你我。愿我们不惧坎坷、挣脱困顿，勇敢向前，在平凡生活里找到属于自己的热爱。',
+    cover:
+      'https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/d87d84335be14b208f908fdacbf23caf~tplv-tb4s082cfz-aigc_resize_loss:720:720.webp?lk3s=4fa96020&x-expires=1787184000&x-signature=ISCSryozIVDdj%2BDTLjKIA4hVBy4%3D',
+    videoUrl:
+      'https://v9-artist.vlabvod.com/b23b51e89054540e779405dc9c75571c/6a6b2d32/video/tos/cn/tos-cn-v-148450/o0fH7nKCLBAF2pkQqIbDz1SbsBRgeqR2DHBcEh/?a=4066&ch=0&cr=0&dr=0&er=0&cd=0%7C0%7C0%7C0&br=2857&bt=2857&cs=0&ds=4&ft=5QYTUxhhe6BMyqWAs1eJD12Nzj&mime_type=video_mp4&qs=0&rc=NTxoZjs8Zjo8aThmODU6NEBpM3BmaHM5cmw6OzczNDM7M0BiXjBjM2BiXjQxMjBfLzYzYSM2b29kMmRrNWthLS1kNC9zcw%3D%3D&btag=80000e00038000&dy_q=1784803025&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=20260723183704A1A30B019C5A2094D002',
+    link: '/taptv/t7a1d001-7e23-4c01-9a01-000000000001',
     sortOrder: 0,
   },
   {
-    title: 'Seedance 2.0 Now Live',
-    subtitle: '体验创意·更清晰·更流畅',
-    cover: 'linear-gradient(160deg,#ff0080 0%,#7928ca 35%,#0070f3 70%,#00dfd8 100%)',
-    link: '/taptv',
+    title: '他只是停了三秒，却被剪成了证据｜《三秒水渍》',
+    subtitle:
+      '《三秒水渍》以一个微小到几乎不构成事件的瞬间为起点：一名普通通勤者在便利店失手打翻水瓶，低头停顿三秒后默默捡起、擦净并离开。现实中的事件很快结束，但监控只留下那段停顿。被上传到网络后，它脱离完整语境，成为可反复播放、剪切和解释的片段。不同观看者把自己的立场投射其上，水渍被说成证据，沉默被读成态度，三秒被放大成公共审判与社会热点。随着影像在屏幕、冷柜、试管和档案机器中被复制、归类，完整的主角逐渐被一帧画面取代。结尾，主角看向隐藏的偷窥视角，短暂反看观看者，却无法停止循环；眨眼之后，一切重新开始。',
+    cover:
+      'https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/d85cd328f99d4bc5aa93aa5108ac635f~tplv-tb4s082cfz-aigc_resize_loss:720:720.webp?lk3s=4fa96020&x-expires=1787184000&x-signature=VOQpd2Dykm7r4tyb79pO%2FkxFXj8%3D',
+    videoUrl:
+      'https://v9-artist.vlabvod.com/3d91968e84e6f9eb7af61d74b4290bfb/6a6b2a18/video/tos/cn/tos-cn-v-148450/oM4AEZDZFBGmGQZ7BB7YSBeH02AIENRfgqU4RE/?a=4066&ch=0&cr=0&dr=0&er=0&cd=0%7C0%7C0%7C0&br=2664&bt=2664&cs=0&ds=4&ft=5QYTUxhhe6BMyqWAs1eJD12Nzj&mime_type=video_mp4&qs=0&rc=NWc5ZGczNzU3NGQ7ZGQ8ZkBpMzk0OnU5cjxuOzczNDM7M0A0MC8tYWMtNWExLTQvNDNeYSNgcC1hMmRrL2BhLS1kNGFzcw%3D%3D&btag=80000e00028000&dy_q=1784803025&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=20260723183704A1A30B019C5A2094D002',
+    link: '/taptv/t7a1d001-7e23-4c01-9a01-000000000002',
     sortOrder: 1,
   },
   {
-    title: 'Introducing Agentic Canvas',
-    subtitle: '体验创意·更清晰·更流畅',
-    cover: 'linear-gradient(160deg,#18181b 0%,#27272a 50%,#3f3f46 100%)',
-    link: '/canvas',
+    title: '宋江歌曲《呼保义》',
+    subtitle: '水墨染忠义 招安碎江湖 及时雨藏半阙月光 梁山梦断蓼儿洼。',
+    cover:
+      'https://p3-heycan-hgt-sign.byteimg.com/tos-cn-i-3jr8j4ixpe/19c627c22095415bb6e0625a42b1197b~tplv-3jr8j4ixpe-aigc_resize_loss:720:720.webp?lk3s=4fa96020&x-expires=1787184000&x-signature=Sf841KKf9MwSRc%2BSxdBC2rttoEc%3D',
+    videoUrl:
+      'https://v9-artist.vlabvod.com/9678bacf662636fb2f50655da350d038/6a6b2a20/video/tos/cn/tos-cn-v-148450/o4EDpGRfd1AqHBFH9CRAII3SEINjazQIKgfFBp/?a=4066&ch=0&cr=0&dr=0&er=0&cd=0%7C0%7C0%7C0&br=3185&bt=3185&cs=0&ds=4&ft=5QYTUxhhe6BMyqWAs1eJD12Nzj&mime_type=video_mp4&qs=0&rc=ZDk3ODZlMzo2ZGhpO2VoaUBpam1ubHk5cmpkNzczNDM7M0A1XjUuL2AyNmMxX2I2LTEvYSMvZWowMmQ0NWFhLS1kNGFzcw%3D%3D&btag=80000e00028000&dy_q=1784803025&feature_id=f0150a16a324336cda5d6dd0b69ed299&l=20260723183704A1A30B019C5A2094D002',
+    link: '/taptv/t7a1d001-7e23-4c01-9a01-000000000003',
     sortOrder: 2,
-  },
-  {
-    title: 'WORLD MODEL',
-    subtitle: '下一代视频生成',
-    cover: 'linear-gradient(160deg,#0f0f23 0%,#e11d48 50%,#7c3aed 100%)',
-    link: '/taptv',
-    sortOrder: 3,
   },
 ];
 
@@ -123,6 +127,7 @@ export class TaptvService implements OnModuleInit {
       title: row.title,
       subtitle: row.subtitle ?? undefined,
       cover: row.cover,
+      video_url: row.videoUrl ?? undefined,
       link: row.link ?? undefined,
     }));
   }

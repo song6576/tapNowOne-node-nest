@@ -125,8 +125,9 @@ model AgentMessage {
 model FeaturedBanner {
   id        String   @id @default(uuid()) @db.Char(36)
   title     String   @db.VarChar(255)
-  subtitle  String?  @db.VarChar(255)
-  cover     String   @db.VarChar(512)
+  subtitle  String?  @db.VarChar(512)
+  cover     String   @db.VarChar(1024)
+  videoUrl  String?  @map("video_url") @db.VarChar(1024)
   link      String?  @db.VarChar(512)
   sortOrder Int      @default(0) @map("sort_order")
   active    Boolean  @default(true)
@@ -144,8 +145,8 @@ model TapTVWork {
   title        String   @db.VarChar(255)
   authorName   String   @map("author_name") @db.VarChar(128)
   authorAvatar String   @map("author_avatar") @db.VarChar(16)
-  cover        String   @db.VarChar(512) /// 列表默认封面：图片 URL 或 CSS 渐变
-  videoUrl     String   @map("video_url") @db.VarChar(512) /// 卡片鼠标悬浮时播放
+  cover        String   @db.VarChar(1024) /// 列表默认封面：图片 URL 或 CSS 渐变
+  videoUrl     String   @map("video_url") @db.VarChar(1024) /// 卡片鼠标悬浮时播放
   description  String?  @db.Text
   producer     String?  @db.VarChar(255)
   forks        Int      @default(0)
