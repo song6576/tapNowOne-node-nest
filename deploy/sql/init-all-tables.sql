@@ -169,7 +169,7 @@ CREATE TABLE `agent_message` (
 CREATE TABLE `featured_banner` (
   `id` CHAR(36) NOT NULL,
   `title` VARCHAR(255) NOT NULL,
-  `subtitle` VARCHAR(512) NULL,
+  `subtitle` TEXT NULL,
   `cover` VARCHAR(1024) NOT NULL,
   `video_url` VARCHAR(1024) NULL,
   `link` VARCHAR(512) NULL,
@@ -259,4 +259,4 @@ CREATE TABLE `schema_migration` (
 
 INSERT INTO `schema_migration` (`filename`) VALUES ('init-all-tables.sql');
 
--- 首次启动 Nest 服务时会自动 seed 精选轮播与 TapTV 示例数据（表为空时）
+-- 精选轮播与 TapTV 数据通过增量 SQL 或管理接口写入，不在服务启动时自动生成。

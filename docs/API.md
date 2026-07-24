@@ -1,7 +1,7 @@
 # TapNow 接口说明
 
 本文档描述后端 NestJS 提供的 HTTP 接口：**路径、鉴权、请求/响应字段、业务逻辑、对应数据表**。  
-前端真实调用见 `frontend/src/api/client.ts`；组件层统一走 `frontend/src/services/api.ts`（可切换 Mock）。
+前端真实调用见 `frontend/src/api/client.ts`；组件层统一走 `frontend/src/services/api.ts`，所有业务数据均由后端提供。
 
 > **约定：** 以后每新增字段、SQL 脚本或接口，须同步更新：
 > 1. `deploy/sql/*.sql` 字段行尾注释  
@@ -335,20 +335,6 @@ AI 模型目录，无鉴权。供首页与画布节点按类型选用。
 
 ---
 
-## Mock 模式
-
-`VITE_USE_MOCK=true`（默认）时：
-
-| 真实接口 | Mock 实现 |
-|----------|-----------|
-| `POST .../like` | `mockToggleTapTVLike` + `localStorage` key `tapflow_taptv_likes` |
-| `POST .../favorite` | `mockToggleTapTVFavorite` + key `tapflow_taptv_favorites` |
-| `GET .../favorites` | 从 Mock 数据过滤 localStorage 中的收藏 id |
-
-见 `frontend/src/utils/taptvLocalState.ts`、`frontend/src/mock/api.ts`。
-
----
-
 ## 计费 `/api/billing`
 
 > 当前订阅 / 充值 / 礼包购买为**模拟支付**（登录后即时到账）。上线接 Stripe/支付宝时替换下单与 webhook 即可，接口路径可保持不变。  
@@ -444,7 +430,6 @@ Tapies 交易流水（账单「交易记录」Tab）。
 2. `image`：按模型调用百炼或方舟 Seedream，并把临时结果下载到对象存储（或 `/uploads/generated/`）。
 3. `video`：调用百炼 HappyHorse / 方舟 Seedance 创建异步任务，后台轮询完成后下载 MP4 落到对象存储。
 4. `audio`：本期不生成，可上传已有音频用于视频合成。
-5. `MOCK_MODE=true`：不调用供应商，返回占位结果。
 
 ### GET `/api/tasks/:taskId`
 
@@ -464,7 +449,6 @@ Tapies 交易流水（账单「交易记录」Tab）。
 | `VIDEO_RESOLUTION` | 默认 `720p` |
 | `VIDEO_RATIO` | 默认 `16:9` |
 | `PUBLIC_BASE_URL` | 拼上游相对图片 URL，默认 `http://127.0.0.1:PORT` |
-| `MOCK_MODE` | `true` 强制占位图 |
 
 > **换 Key / 换其他 AI 平台：** 见 [`AI-PROVIDER.md`](AI-PROVIDER.md)。
 
@@ -504,4 +488,3 @@ Tapies 交易流水（账单「交易记录」Tab）。
 - 服务器需安装带 `libx264` 和 `overlay` filter 的 FFmpeg；字幕先由 Sharp 渲染为透明图层，不依赖 `libass`。
 
 相关变量：`FFMPEG_PATH`（默认 `ffmpeg`）、`COMPOSE_REMOTE_HOSTS`、`MEDIA_DOWNLOAD_MAX_BYTES`。
-

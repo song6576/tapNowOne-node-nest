@@ -125,7 +125,7 @@ model AgentMessage {
 model FeaturedBanner {
   id        String   @id @default(uuid()) @db.Char(36)
   title     String   @db.VarChar(255)
-  subtitle  String?  @db.VarChar(512)
+  subtitle  String?  @db.Text
   cover     String   @db.VarChar(1024)
   videoUrl  String?  @map("video_url") @db.VarChar(1024)
   link      String?  @db.VarChar(512)

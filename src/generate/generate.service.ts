@@ -89,16 +89,6 @@ export class GenerateService implements OnModuleInit {
   private async runTask(taskId: string, dto: GenerateDto, userId: number) {
     await this.tasks.update(taskId, { state: 'running', progress: 5 });
     try {
-      if (this.isForcedMock) {
-        const url = this.mockPlaceholder(dto.node_type, dto.prompt ?? '');
-        await this.tasks.update(taskId, {
-          state: 'completed',
-          progress: 100,
-          result_url: url,
-        });
-        return;
-      }
-
       if (dto.node_type === 'image') {
         const result = await this.aiRouter.generateImage(
           dto.model,
@@ -275,24 +265,4 @@ export class GenerateService implements OnModuleInit {
     return value;
   }
 
-  private get isForcedMock(): boolean {
-    return ['1', 'true', 'yes'].includes(
-      this.config.get<string>('MOCK_MODE', '').toLowerCase(),
-    );
-  }
-
-  private mockPlaceholder(
-    nodeType: 'image' | 'video' | 'audio',
-    prompt: string,
-  ): string {
-    const label = prompt.slice(0, 40).replace(/[<"&]/g, '');
-    const color =
-      nodeType === 'video'
-        ? '#fbbf24'
-        : nodeType === 'audio'
-          ? '#34d399'
-          : '#a78bfa';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="#18181b"/><text x="256" y="230" text-anchor="middle" fill="${color}" font-size="16" font-family="sans-serif">${nodeType} (mock)</text><text x="256" y="270" text-anchor="middle" fill="#71717a" font-size="12" font-family="sans-serif">${label}</text></svg>`;
-    return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  }
 }

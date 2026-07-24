@@ -451,7 +451,7 @@ npx prisma generate
 | 5 | `docs/API.md` | 路径、鉴权、请求/响应、业务逻辑 |
 | 6 | `backend-nest/src/**` | Controller 路由注释 + Service 方法 JSDoc |
 | 7 | `frontend/src/api/client.ts` | 函数 JSDoc（调哪个接口、返回什么） |
-| 8 | `frontend/src/services/api.ts` | Mock/真实切换说明（若新增对外导出） |
+| 8 | `frontend/src/services/api.ts` | 真实 API 统一入口（若新增对外导出） |
 
 Prisma `schema.prisma` 中对应 model 字段可加 `///` 注释，与 SQL 文档保持一致。  
 服务器上用 `./deploy/apply-sql.sh 文件名.sql` 执行增量脚本并登记到 `schema_migration`。

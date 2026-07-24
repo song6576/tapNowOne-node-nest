@@ -11,7 +11,7 @@
 CREATE TABLE IF NOT EXISTS `featured_banner` (
   `id` CHAR(36) NOT NULL,                    -- 主键 UUID
   `title` VARCHAR(255) NOT NULL,             -- 轮播主标题
-  `subtitle` VARCHAR(255) NULL,              -- 副标题（可选）
+  `subtitle` TEXT NULL,                      -- 完整简介（可选）
   `cover` VARCHAR(512) NOT NULL,             -- 封面：图片 URL 或 CSS linear-gradient(...)
   `link` VARCHAR(512) NULL,                  -- 点击跳转路径，如 /taptv
   `sort_order` INT NOT NULL DEFAULT 0,       -- 排序，越小越靠前
@@ -111,4 +111,4 @@ CREATE TABLE IF NOT EXISTS `user_follow` (
   CONSTRAINT `fk_user_follow_following` FOREIGN KEY (`following_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 首次启动 Nest 服务时会自动 seed 精选与 TapTV 示例数据（表为空时）
+-- 精选与 TapTV 数据通过增量 SQL 或管理接口写入，不在服务启动时自动生成。

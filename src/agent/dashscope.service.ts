@@ -33,12 +33,6 @@ export class DashScopeService {
     return Boolean(this.apiKey.trim());
   }
 
-  get mockMode(): boolean {
-    const forced = this.config.get<string>('MOCK_MODE', '').toLowerCase();
-    if (forced === '1' || forced === 'true' || forced === 'yes') return true;
-    return !this.isConfigured;
-  }
-
   /** 多模态生图 API 根路径，可配成 Workspace 专属域名 */
   private get apiBase(): string {
     return (
@@ -60,9 +54,7 @@ export class DashScopeService {
     messages: ChatMessage[],
     model?: string,
   ): Promise<string> {
-    if (this.mockMode) {
-      return this.mockChat(messages);
-    }
+    if (!this.isConfigured) throw new Error('DASHSCOPE_API_KEY 未配置');
 
     const body = {
       model: model ?? this.model,
@@ -368,8 +360,4 @@ export class DashScopeService {
     return `百炼 API 调用失败 (${status})`;
   }
 
-  private mockChat(messages: ChatMessage[]): string {
-    const last = messages.filter((m) => m.role === 'user').at(-1)?.content ?? '';
-    return `（Mock 模式）收到：${last.slice(0, 100)}。请在 backend-nest/.env 中配置 DASHSCOPE_API_KEY 后使用真实百炼对话。`;
-  }
 }

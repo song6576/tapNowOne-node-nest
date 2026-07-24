@@ -47,8 +47,6 @@ DASHSCOPE_MODEL=qwen-plus
 # 生图分辨率
 # IMAGE_SIZE=1328*1328
 
-# 强制不调真实 API（调试用）
-# MOCK_MODE=true
 ```
 
 ### 3. 代码里谁在读
@@ -84,7 +82,6 @@ pm2 restart tapnow-api
 ```bash
 curl -s http://127.0.0.1:3000/api/health
 # dashscope_configured: true 表示已配置 Key
-# mock_mode: true 表示走 Mock（无 Key 或 MOCK_MODE=true）
 ```
 
 > **安全：** `.env` 不要提交到 Git；只提交 `.env.example` / `.env.production.example`。

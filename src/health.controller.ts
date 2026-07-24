@@ -1,5 +1,4 @@
 import { Controller, Get } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AiRouterService } from './ai/ai-router.service';
 import { FfmpegRunner } from './compose/ffmpeg.runner';
 import { PrismaService } from './prisma/prisma.service';
@@ -10,7 +9,6 @@ export class HealthController {
     private readonly prisma: PrismaService,
     private readonly aiRouter: AiRouterService,
     private readonly ffmpeg: FfmpegRunner,
-    private readonly config: ConfigService,
   ) {}
 
   @Get('health')
@@ -31,9 +29,6 @@ export class HealthController {
       service: 'tapnow-backend-nest',
       auth: true,
       database,
-      mock_mode: ['1', 'true', 'yes'].includes(
-        this.config.get<string>('MOCK_MODE', '').toLowerCase(),
-      ),
       providers: this.aiRouter.providersConfigured,
       dashscope_configured: this.aiRouter.providersConfigured.dashscope,
       ark_configured: this.aiRouter.providersConfigured.ark,
